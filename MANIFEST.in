@@ -1,0 +1,5 @@
+﻿include README.md
+include LICENSE
+include .env.example
+recursive-include src/hebbian_mind *.py
+include src/hebbian_mind/data/*.json

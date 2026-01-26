@@ -1,0 +1,54 @@
+﻿[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hebbian-mind-enterprise"
+version = "2.1.0"
+description = "Hebbian Neural Graph Memory System - Enterprise Edition"
+readme = "README.md"
+authors = [
+    {name = "CIPS LLC", email = "contact@cipscorps.com"}
+]
+license = {text = "Proprietary - CIPS LLC"}
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://cipscorps.com"
+Documentation = "https://docs.cipscorps.com/hebbian-mind"
+Repository = "https://github.com/cipscorps/hebbian-mind-enterprise"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hebbian_mind = ["data/*.json"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

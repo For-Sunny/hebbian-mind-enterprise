@@ -1,0 +1,193 @@
+version: '3.8'
+
+# =============================================================================
+# Hebbian Mind Enterprise - Docker Compose
+# Neural Graph Memory System with Hebbian Learning
+#
+# Author: CIPS LLC
+# Created: January 2026
+#
+# Usage:
+#   docker-compose up -d                    # Start with defaults
+#   docker-compose --profile ramdisk up -d  # Start with RAM disk optimization
+#   docker-compose logs -f hebbian-mind     # View logs
+# =============================================================================
+
+services:
+  hebbian-mind:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=${PYTHON_VERSION:-3.12}
+    image: cipscorp/hebbian-mind-enterprise:latest
+    container_name: hebbian-mind
+    restart: unless-stopped
+
+    # MCP stdio communication
+    stdin_open: true
+    tty: true
+
+    # Volume mounts
+    volumes:
+      # Persistent database and node definitions
+      - hebbian_data:/data/hebbian_mind
+
+      # Optional: Mount nodes_v2.json from host for custom node definitions
+      # Uncomment to use your own node definitions
+      # - ./data/nodes_v2.json:/data/hebbian_mind/nodes/nodes_v2.json:ro
+
+      # Optional: Mount PRECOG daemon for concept extraction
+      # - ${PRECOG_PATH:-./precog}:/app/precog:ro
+
+    # Environment configuration
+    environment:
+      # Core settings
+      - HEBBIAN_MIND_BASE_DIR=/data/hebbian_mind
+      - HEBBIAN_MIND_RAM_DISK=${HEBBIAN_MIND_RAM_DISK:-false}
+      - HEBBIAN_MIND_RAM_DIR=/app/ramdisk
+
+      # Hebbian learning parameters
+      - HEBBIAN_MIND_THRESHOLD=${HEBBIAN_MIND_THRESHOLD:-0.3}
+      - HEBBIAN_MIND_EDGE_FACTOR=${HEBBIAN_MIND_EDGE_FACTOR:-1.0}
+      - HEBBIAN_MIND_MAX_WEIGHT=${HEBBIAN_MIND_MAX_WEIGHT:-10.0}
+
+      # FAISS tether integration (optional)
+      - HEBBIAN_MIND_FAISS_ENABLED=${HEBBIAN_MIND_FAISS_ENABLED:-false}
+      - HEBBIAN_MIND_FAISS_HOST=${HEBBIAN_MIND_FAISS_HOST:-faiss-tether}
+      - HEBBIAN_MIND_FAISS_PORT=${HEBBIAN_MIND_FAISS_PORT:-9998}
+
+      # PRECOG concept extraction (optional)
+      - HEBBIAN_MIND_PRECOG_ENABLED=${HEBBIAN_MIND_PRECOG_ENABLED:-false}
+      - HEBBIAN_MIND_PRECOG_PATH=${HEBBIAN_MIND_PRECOG_PATH:-/app/precog}
+
+      # Logging
+      - HEBBIAN_MIND_LOG_LEVEL=${HEBBIAN_MIND_LOG_LEVEL:-INFO}
+
+      # License (enterprise)
+      - HEBBIAN_MIND_LICENSE_KEY=${HEBBIAN_MIND_LICENSE_KEY:-}
+
+    # Network configuration
+    networks:
+      - memory-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # =============================================================================
+  # Optional: RAM disk service for ultra-low latency
+  # Enable with: docker-compose --profile ramdisk up
+  # =============================================================================
+  hebbian-mind-ramdisk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cipscorp/hebbian-mind-enterprise:latest
+    container_name: hebbian-mind-ramdisk
+    restart: unless-stopped
+    profiles:
+      - ramdisk
+
+    stdin_open: true
+    tty: true
+
+    volumes:
+      # tmpfs for RAM-based database storage (ultra-fast reads)
+      - type: tmpfs
+        target: /app/ramdisk
+        tmpfs:
+          size: ${RAMDISK_SIZE:-536870912}  # 512MB default
+          mode: 1777
+
+      # Persistent backup on disk
+      - hebbian_data:/data/hebbian_mind
+
+      # Optional: Custom node definitions
+      # - ./data/nodes_v2.json:/data/hebbian_mind/nodes/nodes_v2.json:ro
+
+    environment:
+      # Enable RAM disk mode
+      - HEBBIAN_MIND_BASE_DIR=/data/hebbian_mind
+      - HEBBIAN_MIND_RAM_DISK=true
+      - HEBBIAN_MIND_RAM_DIR=/app/ramdisk
+
+      # Hebbian parameters
+      - HEBBIAN_MIND_THRESHOLD=${HEBBIAN_MIND_THRESHOLD:-0.3}
+      - HEBBIAN_MIND_EDGE_FACTOR=${HEBBIAN_MIND_EDGE_FACTOR:-1.0}
+      - HEBBIAN_MIND_MAX_WEIGHT=${HEBBIAN_MIND_MAX_WEIGHT:-10.0}
+
+      # FAISS integration
+      - HEBBIAN_MIND_FAISS_ENABLED=${HEBBIAN_MIND_FAISS_ENABLED:-false}
+      - HEBBIAN_MIND_FAISS_HOST=${HEBBIAN_MIND_FAISS_HOST:-faiss-tether}
+      - HEBBIAN_MIND_FAISS_PORT=${HEBBIAN_MIND_FAISS_PORT:-9998}
+
+      # PRECOG integration
+      - HEBBIAN_MIND_PRECOG_ENABLED=${HEBBIAN_MIND_PRECOG_ENABLED:-false}
+      - HEBBIAN_MIND_PRECOG_PATH=${HEBBIAN_MIND_PRECOG_PATH:-}
+
+      # Logging
+      - HEBBIAN_MIND_LOG_LEVEL=${HEBBIAN_MIND_LOG_LEVEL:-INFO}
+
+    networks:
+      - memory-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # =============================================================================
+  # Optional: FAISS Tether for semantic search
+  # Uncomment if you want to use FAISS integration
+  # =============================================================================
+  # faiss-tether:
+  #   image: cipscorp/pytorch-memory-enterprise:latest
+  #   container_name: faiss-tether
+  #   restart: unless-stopped
+  #   runtime: nvidia
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   volumes:
+  #     - faiss_data:/data
+  #   environment:
+  #     - SOCKET_ENABLED=true
+  #     - SOCKET_HOST=0.0.0.0
+  #     - SOCKET_PORT=9998
+  #   ports:
+  #     - "9998:9998"
+  #   networks:
+  #     - memory-network
+
+# =============================================================================
+# Named volumes for persistence
+# =============================================================================
+volumes:
+  hebbian_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HEBBIAN_DATA_PATH:-./data/hebbian_mind}
+
+  # faiss_data:
+  #   driver: local
+
+# =============================================================================
+# Network configuration
+# =============================================================================
+networks:
+  memory-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
