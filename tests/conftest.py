@@ -154,7 +154,7 @@ def test_db(test_config: Dict) -> Generator[sqlite3.Connection, None, None]:
             content TEXT NOT NULL,
             summary TEXT,
             source TEXT DEFAULT 'TEST',
-            frequency REAL DEFAULT 21.43,
+            frequency REAL DEFAULT 1.0,
             importance REAL DEFAULT 0.5,
             emotional_intensity REAL DEFAULT 0.5,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
