@@ -6,9 +6,52 @@ Copyright (c) 2026 CIPS LLC
 """
 
 import os
+import re
 import platform
 from pathlib import Path
 from typing import Optional
+
+
+def sanitize_error_message(error: Exception) -> str:
+    """Sanitize error messages to prevent internal path leakage.
+
+    Strips common internal paths from error messages before they
+    are returned to customers. This prevents exposing server
+    filesystem structure in error responses.
+
+    Args:
+        error: The exception to sanitize
+
+    Returns:
+        Sanitized error message with internal paths scrubbed
+    """
+    message = str(error)
+
+    # Patterns to scrub (order matters - more specific first)
+    patterns = [
+        # Windows paths
+        (r'[A-Za-z]:\\Users\\[^\\]+\\', ''),           # C:\Users\username\
+        (r'[A-Za-z]:\\[Pp]rogram [Ff]iles[^\\]*\\', ''),  # C:\Program Files\
+        (r'[A-Za-z]:\\[Ww]indows\\', ''),              # C:\Windows\
+        (r'[A-Za-z]:\\[^\\]+\\', ''),                  # Any other drive root
+
+        # Linux/Unix paths
+        (r'/home/[^/]+/', ''),                         # /home/username/
+        (r'/app/', ''),                                # Docker /app/
+        (r'/opt/[^/]+/', ''),                          # /opt/package/
+        (r'/usr/local/', ''),                          # /usr/local/
+        (r'/var/[^/]+/', ''),                          # /var/lib/, /var/log/, etc
+        (r'/tmp/', ''),                                # /tmp/
+
+        # Generic patterns (fallback)
+        (r'File "[^"]+",', 'File "<path>",'),          # Python traceback file references
+        (r"File '[^']+',", "File '<path>',"),          # Python traceback file references (single quotes)
+    ]
+
+    for pattern, replacement in patterns:
+        message = re.sub(pattern, replacement, message)
+
+    return message
 
 
 def _get_default_ram_dir() -> Optional[Path]:

@@ -33,12 +33,11 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools
 COPY pyproject.toml /build/
 COPY README.md /build/
 
-# Install dependencies
-RUN pip install --no-cache-dir -e /build/
-
-# Copy source code
+# Copy source code (must exist before editable install)
 COPY src/ /build/src/
-COPY .github/ /build/.github/
+
+# Install the package (not editable - needed for multi-stage builds)
+RUN pip install --no-cache-dir /build/
 
 # ===========================================================================
 # Stage 2: Runtime - Lean production image
@@ -110,5 +109,7 @@ LABEL org.opencontainers.image.title="hebbian-mind-enterprise" \
       org.opencontainers.image.version="2.1.0" \
       org.opencontainers.image.licenses="Proprietary"
 
-# Entry point - run the MCP server
-CMD ["python", "-m", "hebbian_mind.server"]
+# Entry point - run the MCP server in standalone mode for Docker
+# Standalone mode keeps container alive for health checks
+# MCP clients connect via SSE bridge or docker exec with proper stdio
+CMD ["python", "-m", "hebbian_mind.server", "--standalone"]

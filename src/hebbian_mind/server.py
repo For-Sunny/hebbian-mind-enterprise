@@ -27,7 +27,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from .config import Config
+from .config import Config, sanitize_error_message
 
 # Initialize configuration
 Config.ensure_directories()
@@ -347,8 +347,10 @@ class HebbianMindDatabase:
                 print(f"[HEBBIAN-MIND] PRECOG extraction error: {e}", file=sys.stderr)
 
         for node in nodes:
-            keywords = json.loads(node['keywords']) if isinstance(node['keywords'], str) else node['keywords']
-            prototype_phrases = json.loads(node['prototype_phrases']) if isinstance(node['prototype_phrases'], str) else node.get('prototype_phrases', [])
+            raw_keywords = node.get('keywords', [])
+            keywords = json.loads(raw_keywords) if isinstance(raw_keywords, str) else raw_keywords
+            raw_phrases = node.get('prototype_phrases', [])
+            prototype_phrases = json.loads(raw_phrases) if isinstance(raw_phrases, str) else raw_phrases
 
             score = 0.0
             matched_keywords = []
@@ -992,14 +994,51 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
             )]
 
     except Exception as e:
+        # Sanitize error to prevent internal path leakage to customers
+        safe_error = sanitize_error_message(e)
         return [types.TextContent(
             type="text",
-            text=json.dumps({"success": False, "error": str(e)}, indent=2)
+            text=json.dumps({"success": False, "error": safe_error}, indent=2)
         )]
+
+
+async def run_stdio_server():
+    """Run the MCP server with stdio transport."""
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(read_stream, write_stream, server.create_initialization_options())
+
+
+async def run_standalone():
+    """Run in standalone mode - keeps container alive for health checks.
+
+    MCP stdio servers need stdin/stdout for communication, but Docker
+    containers without TTY have no stdin. This mode keeps the container
+    running so health checks pass, while still initializing the database.
+
+    When an MCP client connects (e.g., via docker exec or SSE bridge),
+    they spawn a new process with proper stdio.
+    """
+    print("[HEBBIAN-MIND] Running in standalone mode (container keep-alive)", file=sys.stderr)
+    print("[HEBBIAN-MIND] Database initialized and ready", file=sys.stderr)
+    print("[HEBBIAN-MIND] For MCP access, connect via SSE bridge or docker exec", file=sys.stderr)
+
+    # Keep the container alive
+    while True:
+        await asyncio.sleep(3600)  # Sleep for 1 hour, repeat forever
 
 
 async def main():
     """Main entry point."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Hebbian Mind Enterprise MCP Server")
+    parser.add_argument(
+        "--standalone",
+        action="store_true",
+        help="Run in standalone mode (for Docker containers without TTY)"
+    )
+    args = parser.parse_args()
+
     print("[HEBBIAN-MIND] Hebbian Mind Enterprise v2.1.0 starting", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (read): {db.ram_path if db.using_ram else db.disk_path}", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (write): {db.disk_path}", file=sys.stderr)
@@ -1008,8 +1047,10 @@ async def main():
     if Config.FAISS_TETHER_ENABLED:
         print(f"[HEBBIAN-MIND] FAISS tether: {Config.FAISS_TETHER_HOST}:{Config.FAISS_TETHER_PORT}", file=sys.stderr)
 
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, server.create_initialization_options())
+    if args.standalone:
+        await run_standalone()
+    else:
+        await run_stdio_server()
 
 
 if __name__ == "__main__":
