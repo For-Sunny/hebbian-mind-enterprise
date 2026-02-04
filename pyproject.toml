@@ -41,8 +41,10 @@ Repository = "https://github.com/cipscorps/hebbian-mind-enterprise"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["hebbian_mind*"]
 
 [tool.setuptools.package-data]
+"hebbian_mind.data" = ["*.json"]
 hebbian_mind = ["data/*.json"]
 
 [tool.black]

@@ -18,6 +18,7 @@ All rights reserved.
 """
 
 import json
+import re
 import sqlite3
 import socket
 import sys
@@ -26,6 +27,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+from importlib import resources
 
 from .config import Config, sanitize_error_message
 
@@ -193,42 +195,79 @@ class HebbianMindDatabase:
             self.disk_conn.commit()
 
     def _init_nodes_if_empty(self):
-        """Load nodes from nodes_v2.json if table is empty."""
+        """Load nodes from nodes_v2.json if table is empty.
+
+        Search order:
+        1. User's data directory: nodes_v2.json
+        2. User's data directory: nodes.json
+        3. Package bundled data: nodes_v2.json
+        4. Package bundled data: nodes.json
+        """
         cursor = self.read_conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM nodes")
         if cursor.fetchone()[0] > 0:
             return  # Already has nodes
 
-        # Try to load nodes_v2.json first, fall back to nodes.json
-        nodes_path = Config.DISK_NODES_PATH
-        if not nodes_path.exists():
-            nodes_path = Config.DISK_DATA_DIR / "nodes.json"
+        nodes_data = None
+        source_name = None
 
-        if not nodes_path.exists():
-            logger.warning(f"Nodes file not found at {nodes_path}. Starting with empty graph.")
+        # Try user's data directory first (allows customization)
+        user_paths = [
+            Config.DISK_NODES_PATH,  # nodes_v2.json
+            Config.DISK_DATA_DIR / "nodes.json"
+        ]
+
+        for user_path in user_paths:
+            if user_path.exists():
+                try:
+                    with open(user_path, 'r', encoding='utf-8') as f:
+                        nodes_data = json.load(f)
+                    source_name = str(user_path)
+                    break
+                except Exception as e:
+                    logger.warning(f"Failed to load {user_path}: {e}")
+
+        # Fall back to package bundled data if no user file found
+        if nodes_data is None:
+            bundled_files = ["nodes_v2.json", "nodes.json"]
+            for bundled_file in bundled_files:
+                try:
+                    # Python 3.9+ compatible resource loading
+                    if hasattr(resources, 'files'):
+                        # Python 3.9+
+                        data_files = resources.files('hebbian_mind').joinpath('data')
+                        nodes_file = data_files.joinpath(bundled_file)
+                        if nodes_file.is_file():
+                            nodes_data = json.loads(nodes_file.read_text(encoding='utf-8'))
+                            source_name = f"bundled:{bundled_file}"
+                            break
+                    else:
+                        # Python 3.8 fallback
+                        with resources.open_text('hebbian_mind.data', bundled_file) as f:
+                            nodes_data = json.load(f)
+                        source_name = f"bundled:{bundled_file}"
+                        break
+                except Exception:
+                    continue
+
+        if nodes_data is None:
+            logger.warning("No nodes file found. Starting with empty graph.")
             return
 
-        try:
-            with open(nodes_path, 'r', encoding='utf-8') as f:
-                nodes_data = json.load(f)
+        nodes = nodes_data.get('nodes', nodes_data)
 
-            nodes = nodes_data.get('nodes', nodes_data)
+        if len(nodes) == 0:
+            logger.warning("No nodes loaded. Graph will be empty until nodes are added.")
+            return
 
-            if len(nodes) == 0:
-                logger.warning("No nodes loaded. Graph will be empty until nodes are added.")
-                return
+        # Insert nodes to both connections
+        for node in nodes:
+            self._insert_node(node)
 
-            # Insert nodes to both connections
-            for node in nodes:
-                self._insert_node(node)
+        # Initialize edges between same-category nodes
+        self._init_category_edges()
 
-            # Initialize edges between same-category nodes
-            self._init_category_edges()
-
-            logger.info(f"Loaded {len(nodes)} nodes from {nodes_path.name}")
-
-        except Exception as e:
-            logger.error(f"Error loading nodes: {e}")
+        logger.info(f"Loaded {len(nodes)} nodes from {source_name}")
 
     def _insert_node(self, node: Dict):
         """Insert a node to both RAM and disk."""
@@ -357,7 +396,6 @@ class HebbianMindDatabase:
             precog_boosted = False
 
             # Check keywords
-            import re
             for keyword in keywords:
                 keyword_lower = keyword.lower()
                 if keyword_lower in content_lower:

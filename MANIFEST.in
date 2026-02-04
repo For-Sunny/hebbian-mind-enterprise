@@ -2,4 +2,4 @@
 include LICENSE
 include .env.example
 recursive-include src/hebbian_mind *.py
-include src/hebbian_mind/data/*.json
+recursive-include src/hebbian_mind/data *.json

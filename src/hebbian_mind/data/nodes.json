@@ -1,0 +1,1656 @@
+{
+  "nodes": [
+    {
+      "id": "system",
+      "name": "System",
+      "category": "Systems & Architecture",
+      "description": "An integrated collection of components working together to achieve specific objectives. The fundamental organizing unit of enterprise architecture.",
+      "prototype_phrases": [
+        "system architecture",
+        "system design",
+        "distributed system",
+        "enterprise system",
+        "system integration"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "category": "Systems & Architecture",
+      "description": "The fundamental organization of a system, including its components, relationships, and principles governing design and evolution.",
+      "prototype_phrases": [
+        "software architecture",
+        "architectural pattern",
+        "architecture design",
+        "system architecture",
+        "microservices architecture"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "infrastructure",
+      "name": "Infrastructure",
+      "category": "Systems & Architecture",
+      "description": "The foundational computing resources and services that support application deployment and operation.",
+      "prototype_phrases": [
+        "infrastructure as code",
+        "cloud infrastructure",
+        "network infrastructure",
+        "infrastructure monitoring",
+        "infrastructure deployment"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "component",
+      "name": "Component",
+      "category": "Systems & Architecture",
+      "description": "A modular, reusable unit of software that encapsulates specific functionality and can be independently deployed.",
+      "prototype_phrases": [
+        "component design",
+        "component interface",
+        "reusable component",
+        "component library",
+        "component architecture"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "module",
+      "name": "Module",
+      "category": "Systems & Architecture",
+      "description": "A self-contained unit of code that groups related functionality and maintains clear boundaries with other modules.",
+      "prototype_phrases": [
+        "module design",
+        "module dependency",
+        "core module",
+        "module interface",
+        "module loading"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "service",
+      "name": "Service",
+      "category": "Systems & Architecture",
+      "description": "A discrete unit of functionality accessible over a network, typically following service-oriented or microservices patterns.",
+      "prototype_phrases": [
+        "microservice",
+        "web service",
+        "service endpoint",
+        "service orchestration",
+        "service mesh"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "api",
+      "name": "API",
+      "category": "Systems & Architecture",
+      "description": "Application Programming Interface that defines contracts for software component interaction and data exchange.",
+      "prototype_phrases": [
+        "REST API",
+        "API endpoint",
+        "API gateway",
+        "API design",
+        "GraphQL API"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "interface",
+      "name": "Interface",
+      "category": "Systems & Architecture",
+      "description": "A defined boundary that specifies how components communicate, including methods, parameters, and contracts.",
+      "prototype_phrases": [
+        "interface design",
+        "user interface",
+        "interface contract",
+        "interface implementation",
+        "interface specification"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "protocol",
+      "name": "Protocol",
+      "category": "Systems & Architecture",
+      "description": "A standardized set of rules and conventions for communication between systems or components.",
+      "prototype_phrases": [
+        "communication protocol",
+        "network protocol",
+        "protocol specification",
+        "protocol implementation",
+        "custom protocol"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "framework",
+      "name": "Framework",
+      "category": "Systems & Architecture",
+      "description": "A reusable software structure that provides generic functionality and can be extended for application-specific features.",
+      "prototype_phrases": [
+        "application framework",
+        "framework design",
+        "framework integration",
+        "testing framework",
+        "web framework"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "platform",
+      "name": "Platform",
+      "category": "Systems & Architecture",
+      "description": "An integrated environment providing foundational services, tools, and runtime for application development and deployment.",
+      "prototype_phrases": [
+        "platform architecture",
+        "cloud platform",
+        "platform service",
+        "platform integration",
+        "platform engineering"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "integration",
+      "name": "Integration",
+      "category": "Systems & Architecture",
+      "description": "The process of combining separate systems or components to function as a coordinated whole.",
+      "prototype_phrases": [
+        "system integration",
+        "integration pattern",
+        "API integration",
+        "data integration",
+        "integration testing"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "deployment",
+      "name": "Deployment",
+      "category": "Systems & Architecture",
+      "description": "The process of delivering and installing software to target environments for execution.",
+      "prototype_phrases": [
+        "continuous deployment",
+        "deployment pipeline",
+        "deployment strategy",
+        "deployment automation",
+        "zero-downtime deployment"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "configuration",
+      "name": "Configuration",
+      "category": "Systems & Architecture",
+      "description": "The set of parameters and settings that define system behavior and operational characteristics.",
+      "prototype_phrases": [
+        "configuration management",
+        "configuration file",
+        "configuration parameter",
+        "dynamic configuration",
+        "configuration validation"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "environment",
+      "name": "Environment",
+      "category": "Systems & Architecture",
+      "description": "A specific configuration of infrastructure, services, and settings where applications execute.",
+      "prototype_phrases": [
+        "production environment",
+        "development environment",
+        "environment configuration",
+        "environment variable",
+        "staging environment"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "category": "Security",
+      "description": "The practice of protecting systems, data, and resources from unauthorized access, modification, or destruction.",
+      "prototype_phrases": [
+        "security framework",
+        "security policy",
+        "security architecture",
+        "security best practices",
+        "security assessment"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "authentication",
+      "name": "Authentication",
+      "category": "Security",
+      "description": "The process of verifying the identity of users, systems, or processes attempting to access resources.",
+      "prototype_phrases": [
+        "user authentication",
+        "authentication token",
+        "multi-factor authentication",
+        "authentication service",
+        "authentication flow"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "authorization",
+      "name": "Authorization",
+      "category": "Security",
+      "description": "The process of determining what actions an authenticated entity is permitted to perform.",
+      "prototype_phrases": [
+        "authorization policy",
+        "role-based authorization",
+        "authorization service",
+        "access authorization",
+        "authorization rules"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "encryption",
+      "name": "Encryption",
+      "category": "Security",
+      "description": "The process of encoding information to prevent unauthorized access, ensuring confidentiality and integrity.",
+      "prototype_phrases": [
+        "data encryption",
+        "encryption algorithm",
+        "encryption key",
+        "end-to-end encryption",
+        "encryption at rest"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "access",
+      "name": "Access",
+      "category": "Security",
+      "description": "The ability to interact with resources, systems, or data, controlled through authentication and authorization mechanisms.",
+      "prototype_phrases": [
+        "access control",
+        "access management",
+        "access policy",
+        "access rights",
+        "access level"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "permission",
+      "name": "Permission",
+      "category": "Security",
+      "description": "Specific rights granted to users or systems to perform operations on resources.",
+      "prototype_phrases": [
+        "permission model",
+        "permission grant",
+        "permission check",
+        "permission scope",
+        "permission management"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "credential",
+      "name": "Credential",
+      "category": "Security",
+      "description": "Information used to authenticate identity, such as passwords, certificates, or cryptographic keys.",
+      "prototype_phrases": [
+        "credential management",
+        "credential storage",
+        "credential validation",
+        "credential rotation",
+        "credential vault"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "token",
+      "name": "Token",
+      "category": "Security",
+      "description": "A digital artifact representing authentication state or authorization claims, used for secure communication.",
+      "prototype_phrases": [
+        "access token",
+        "JWT token",
+        "token validation",
+        "token refresh",
+        "bearer token"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "audit",
+      "name": "Audit",
+      "category": "Security",
+      "description": "The systematic recording and review of system activities for security, compliance, and accountability purposes.",
+      "prototype_phrases": [
+        "audit log",
+        "audit trail",
+        "audit compliance",
+        "audit event",
+        "security audit"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "compliance",
+      "name": "Compliance",
+      "category": "Security",
+      "description": "Adherence to regulatory requirements, industry standards, and organizational policies.",
+      "prototype_phrases": [
+        "compliance framework",
+        "regulatory compliance",
+        "compliance audit",
+        "compliance policy",
+        "compliance monitoring"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "vulnerability",
+      "name": "Vulnerability",
+      "category": "Security",
+      "description": "A weakness in system design, implementation, or operation that could be exploited to compromise security.",
+      "prototype_phrases": [
+        "vulnerability assessment",
+        "vulnerability scan",
+        "security vulnerability",
+        "vulnerability management",
+        "vulnerability mitigation"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "threat",
+      "name": "Threat",
+      "category": "Security",
+      "description": "A potential danger that could exploit vulnerabilities to cause harm to systems, data, or operations.",
+      "prototype_phrases": [
+        "threat model",
+        "threat detection",
+        "threat intelligence",
+        "threat assessment",
+        "threat mitigation"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "data",
+      "name": "Data",
+      "category": "Data & Memory",
+      "description": "Structured or unstructured information that is collected, stored, processed, and analyzed within systems.",
+      "prototype_phrases": [
+        "data management",
+        "data model",
+        "data processing",
+        "data pipeline",
+        "data governance"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "category": "Data & Memory",
+      "description": "The capability to store and retrieve information, encompassing both volatile and persistent storage mechanisms.",
+      "prototype_phrases": [
+        "memory management",
+        "memory storage",
+        "memory architecture",
+        "memory optimization",
+        "memory allocation"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "category": "Data & Memory",
+      "description": "Physical or logical systems for persisting data, including databases, file systems, and cloud storage.",
+      "prototype_phrases": [
+        "storage system",
+        "data storage",
+        "storage architecture",
+        "storage optimization",
+        "storage management"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "category": "Data & Memory",
+      "description": "An organized collection of structured data with mechanisms for efficient storage, retrieval, and management.",
+      "prototype_phrases": [
+        "database design",
+        "database management",
+        "database query",
+        "database schema",
+        "relational database"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "cache",
+      "name": "Cache",
+      "category": "Data & Memory",
+      "description": "A high-speed data storage layer that stores frequently accessed information for rapid retrieval.",
+      "prototype_phrases": [
+        "cache management",
+        "cache invalidation",
+        "distributed cache",
+        "cache strategy",
+        "cache optimization"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "index",
+      "name": "Index",
+      "category": "Data & Memory",
+      "description": "A data structure that improves the speed of data retrieval operations by maintaining organized references.",
+      "prototype_phrases": [
+        "database index",
+        "index optimization",
+        "search index",
+        "index management",
+        "index strategy"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "query",
+      "name": "Query",
+      "category": "Data & Memory",
+      "description": "A request for data or information from a database or information system, typically using structured query languages.",
+      "prototype_phrases": [
+        "database query",
+        "query optimization",
+        "query performance",
+        "query language",
+        "query execution"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "record",
+      "name": "Record",
+      "category": "Data & Memory",
+      "description": "A single complete unit of related data fields representing an entity instance in a database or collection.",
+      "prototype_phrases": [
+        "database record",
+        "record management",
+        "record structure",
+        "record lifecycle",
+        "record update"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "schema",
+      "name": "Schema",
+      "category": "Data & Memory",
+      "description": "The formal structure defining how data is organized, including tables, fields, relationships, and constraints.",
+      "prototype_phrases": [
+        "database schema",
+        "schema design",
+        "schema migration",
+        "schema validation",
+        "schema evolution"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "model",
+      "name": "Model",
+      "category": "Data & Memory",
+      "description": "An abstract representation of data structures, business entities, or system components and their relationships.",
+      "prototype_phrases": [
+        "data model",
+        "domain model",
+        "model design",
+        "model validation",
+        "model architecture"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "entity",
+      "name": "Entity",
+      "category": "Data & Memory",
+      "description": "A distinguishable object or concept with independent existence, represented as a data structure in systems.",
+      "prototype_phrases": [
+        "entity model",
+        "entity relationship",
+        "entity management",
+        "entity mapping",
+        "business entity"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "relationship",
+      "name": "Relationship",
+      "category": "Data & Memory",
+      "description": "A logical connection between entities or data elements that defines how they interact or relate to each other.",
+      "prototype_phrases": [
+        "entity relationship",
+        "relationship mapping",
+        "relationship model",
+        "relationship management",
+        "relationship pattern"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "persistence",
+      "name": "Persistence",
+      "category": "Data & Memory",
+      "description": "The characteristic of data that outlives the process that created it, maintained through storage mechanisms.",
+      "prototype_phrases": [
+        "data persistence",
+        "persistence layer",
+        "persistence strategy",
+        "persistence framework",
+        "persistence management"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "retrieval",
+      "name": "Retrieval",
+      "category": "Data & Memory",
+      "description": "The process of accessing and extracting stored information based on queries or specified criteria.",
+      "prototype_phrases": [
+        "data retrieval",
+        "information retrieval",
+        "retrieval optimization",
+        "retrieval system",
+        "retrieval performance"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "backup",
+      "name": "Backup",
+      "category": "Data & Memory",
+      "description": "A copy of data created to enable recovery in case of data loss, corruption, or disaster.",
+      "prototype_phrases": [
+        "backup strategy",
+        "backup recovery",
+        "backup management",
+        "automated backup",
+        "backup policy"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "logic",
+      "name": "Logic",
+      "category": "Logic & Reasoning",
+      "description": "The systematic principles and rules governing reasoning, decision-making, and problem-solving within systems.",
+      "prototype_phrases": [
+        "business logic",
+        "logic implementation",
+        "logic layer",
+        "logic validation",
+        "logic design"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "reasoning",
+      "name": "Reasoning",
+      "category": "Logic & Reasoning",
+      "description": "The cognitive process of drawing conclusions, making inferences, and solving problems based on available information.",
+      "prototype_phrases": [
+        "reasoning engine",
+        "automated reasoning",
+        "reasoning system",
+        "reasoning logic",
+        "reasoning process"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "decision",
+      "name": "Decision",
+      "category": "Logic & Reasoning",
+      "description": "The process of selecting an action or conclusion from multiple alternatives based on criteria and constraints.",
+      "prototype_phrases": [
+        "decision making",
+        "decision engine",
+        "decision logic",
+        "decision support",
+        "decision tree"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "analysis",
+      "name": "Analysis",
+      "category": "Logic & Reasoning",
+      "description": "The systematic examination and evaluation of data, systems, or processes to extract insights and inform decisions.",
+      "prototype_phrases": [
+        "data analysis",
+        "system analysis",
+        "analysis framework",
+        "analysis tool",
+        "analysis methodology"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "inference",
+      "name": "Inference",
+      "category": "Logic & Reasoning",
+      "description": "The process of deriving logical conclusions from premises or evidence using reasoning mechanisms.",
+      "prototype_phrases": [
+        "inference engine",
+        "inference rule",
+        "inference system",
+        "inference logic",
+        "inference process"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "pattern",
+      "name": "Pattern",
+      "category": "Logic & Reasoning",
+      "description": "A recurring arrangement, design, or template that provides reusable solutions to common problems.",
+      "prototype_phrases": [
+        "design pattern",
+        "pattern recognition",
+        "pattern matching",
+        "architectural pattern",
+        "pattern implementation"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "rule",
+      "name": "Rule",
+      "category": "Logic & Reasoning",
+      "description": "A formal specification of conditions and actions that govern system behavior and decision-making.",
+      "prototype_phrases": [
+        "business rule",
+        "rule engine",
+        "rule validation",
+        "rule management",
+        "rule evaluation"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "condition",
+      "name": "Condition",
+      "category": "Logic & Reasoning",
+      "description": "A logical expression or state that must be satisfied for specific actions or outcomes to occur.",
+      "prototype_phrases": [
+        "conditional logic",
+        "condition evaluation",
+        "condition checking",
+        "condition handling",
+        "condition expression"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "evaluation",
+      "name": "Evaluation",
+      "category": "Logic & Reasoning",
+      "description": "The process of assessing and determining the value, quality, or significance of data, expressions, or outcomes.",
+      "prototype_phrases": [
+        "expression evaluation",
+        "evaluation criteria",
+        "evaluation process",
+        "evaluation framework",
+        "evaluation methodology"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "validation",
+      "name": "Validation",
+      "category": "Logic & Reasoning",
+      "description": "The process of verifying that data, inputs, or outputs meet specified requirements and constraints.",
+      "prototype_phrases": [
+        "data validation",
+        "input validation",
+        "validation rules",
+        "validation framework",
+        "validation logic"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "classification",
+      "name": "Classification",
+      "category": "Logic & Reasoning",
+      "description": "The systematic categorization of entities or data into predefined classes based on characteristics or rules.",
+      "prototype_phrases": [
+        "data classification",
+        "classification model",
+        "classification system",
+        "classification algorithm",
+        "classification logic"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "prediction",
+      "name": "Prediction",
+      "category": "Logic & Reasoning",
+      "description": "The process of forecasting future outcomes or behaviors based on historical data and patterns.",
+      "prototype_phrases": [
+        "predictive model",
+        "prediction algorithm",
+        "prediction system",
+        "prediction analysis",
+        "prediction engine"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "communication",
+      "name": "Communication",
+      "category": "Communication",
+      "description": "The exchange of information, messages, or data between systems, components, or users through defined channels.",
+      "prototype_phrases": [
+        "system communication",
+        "communication protocol",
+        "communication channel",
+        "communication pattern",
+        "communication layer"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "message",
+      "name": "Message",
+      "category": "Communication",
+      "description": "A discrete unit of communication containing data or instructions transmitted between components or systems.",
+      "prototype_phrases": [
+        "message queue",
+        "message broker",
+        "message format",
+        "message handling",
+        "message processing"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "request",
+      "name": "Request",
+      "category": "Communication",
+      "description": "A message sent to solicit information, resources, or actions from a service or system component.",
+      "prototype_phrases": [
+        "API request",
+        "request handling",
+        "request processing",
+        "request validation",
+        "request routing"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "response",
+      "name": "Response",
+      "category": "Communication",
+      "description": "A message returned in reply to a request, containing results, status information, or requested data.",
+      "prototype_phrases": [
+        "API response",
+        "response handling",
+        "response format",
+        "response time",
+        "response code"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "event",
+      "name": "Event",
+      "category": "Communication",
+      "description": "A significant occurrence or state change in a system that may trigger actions or notifications.",
+      "prototype_phrases": [
+        "event driven",
+        "event handler",
+        "event processing",
+        "event stream",
+        "event bus"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "notification",
+      "name": "Notification",
+      "category": "Communication",
+      "description": "An alert or message sent to inform users or systems about events, state changes, or important information.",
+      "prototype_phrases": [
+        "notification system",
+        "notification service",
+        "push notification",
+        "notification management",
+        "notification delivery"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "channel",
+      "name": "Channel",
+      "category": "Communication",
+      "description": "A dedicated path or medium for transmitting messages or data between communicating parties.",
+      "prototype_phrases": [
+        "communication channel",
+        "message channel",
+        "channel management",
+        "channel routing",
+        "channel subscription"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "stream",
+      "name": "Stream",
+      "category": "Communication",
+      "description": "A continuous flow of data or events processed sequentially, often in real-time or near-real-time.",
+      "prototype_phrases": [
+        "data stream",
+        "event stream",
+        "stream processing",
+        "stream management",
+        "stream analytics"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "queue",
+      "name": "Queue",
+      "category": "Communication",
+      "description": "A data structure that holds messages or tasks in order for sequential processing, enabling asynchronous communication.",
+      "prototype_phrases": [
+        "message queue",
+        "task queue",
+        "queue management",
+        "queue processing",
+        "priority queue"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "broadcast",
+      "name": "Broadcast",
+      "category": "Communication",
+      "description": "The transmission of messages or data to multiple recipients simultaneously.",
+      "prototype_phrases": [
+        "broadcast message",
+        "broadcast event",
+        "broadcast channel",
+        "broadcast communication",
+        "broadcast system"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "category": "Identity & Context",
+      "description": "The unique characteristics and attributes that distinguish an entity, user, or system from others.",
+      "prototype_phrases": [
+        "identity management",
+        "identity provider",
+        "identity verification",
+        "identity system",
+        "digital identity"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "user",
+      "name": "User",
+      "category": "Identity & Context",
+      "description": "An individual or system entity that interacts with applications, services, or systems.",
+      "prototype_phrases": [
+        "user management",
+        "user account",
+        "user profile",
+        "user authentication",
+        "user experience"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "session",
+      "name": "Session",
+      "category": "Identity & Context",
+      "description": "A temporary period of interaction between a user or system and an application, maintaining state and context.",
+      "prototype_phrases": [
+        "session management",
+        "session state",
+        "session storage",
+        "session timeout",
+        "session authentication"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "context",
+      "name": "Context",
+      "category": "Identity & Context",
+      "description": "The circumstances, environment, or state information relevant to the current execution or interaction.",
+      "prototype_phrases": [
+        "execution context",
+        "context management",
+        "context information",
+        "context awareness",
+        "context propagation"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "profile",
+      "name": "Profile",
+      "category": "Identity & Context",
+      "description": "A collection of attributes, preferences, and settings associated with a user or system entity.",
+      "prototype_phrases": [
+        "user profile",
+        "profile management",
+        "profile configuration",
+        "profile data",
+        "profile settings"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "preference",
+      "name": "Preference",
+      "category": "Identity & Context",
+      "description": "User-specific choices and settings that customize behavior, appearance, or functionality.",
+      "prototype_phrases": [
+        "user preference",
+        "preference management",
+        "preference setting",
+        "preference storage",
+        "preference configuration"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "setting",
+      "name": "Setting",
+      "category": "Identity & Context",
+      "description": "Configurable parameters that control system or application behavior and characteristics.",
+      "prototype_phrases": [
+        "configuration setting",
+        "setting management",
+        "setting storage",
+        "setting validation",
+        "setting update"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "state",
+      "name": "State",
+      "category": "Identity & Context",
+      "description": "The current condition, values, or configuration of a system, component, or process at a specific point in time.",
+      "prototype_phrases": [
+        "state management",
+        "application state",
+        "state machine",
+        "state persistence",
+        "state transition"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "history",
+      "name": "History",
+      "category": "Identity & Context",
+      "description": "A chronological record of past events, actions, or changes within a system or for an entity.",
+      "prototype_phrases": [
+        "history tracking",
+        "history log",
+        "change history",
+        "history management",
+        "history record"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "scope",
+      "name": "Scope",
+      "category": "Identity & Context",
+      "description": "The extent or boundaries of visibility, access, or applicability for variables, permissions, or operations.",
+      "prototype_phrases": [
+        "scope management",
+        "scope definition",
+        "scope boundary",
+        "scope resolution",
+        "access scope"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "tenant",
+      "name": "Tenant",
+      "category": "Identity & Context",
+      "description": "A distinct customer or organizational entity in a multi-tenant system, with isolated data and configuration.",
+      "prototype_phrases": [
+        "tenant isolation",
+        "tenant management",
+        "multi-tenant",
+        "tenant configuration",
+        "tenant context"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "organization",
+      "name": "Organization",
+      "category": "Identity & Context",
+      "description": "A structured entity representing a business, group, or institution with associated users, resources, and policies.",
+      "prototype_phrases": [
+        "organization management",
+        "organization structure",
+        "organization hierarchy",
+        "organization settings",
+        "organization account"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "operation",
+      "name": "Operation",
+      "category": "Operations",
+      "description": "A discrete action, function, or procedure performed by a system to accomplish specific objectives.",
+      "prototype_phrases": [
+        "operation execution",
+        "operation management",
+        "operation lifecycle",
+        "operation monitoring",
+        "operation control"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "process",
+      "name": "Process",
+      "category": "Operations",
+      "description": "A series of coordinated actions or steps executed to transform inputs into outputs or achieve specific goals.",
+      "prototype_phrases": [
+        "business process",
+        "process automation",
+        "process management",
+        "process execution",
+        "process orchestration"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "task",
+      "name": "Task",
+      "category": "Operations",
+      "description": "A discrete unit of work to be completed, often part of a larger process or workflow.",
+      "prototype_phrases": [
+        "task management",
+        "task execution",
+        "task scheduling",
+        "task queue",
+        "task automation"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "job",
+      "name": "Job",
+      "category": "Operations",
+      "description": "A scheduled or queued unit of work, typically executed asynchronously or in batch mode.",
+      "prototype_phrases": [
+        "job scheduling",
+        "job execution",
+        "background job",
+        "job management",
+        "job queue"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "workflow",
+      "name": "Workflow",
+      "category": "Operations",
+      "description": "An orchestrated sequence of tasks, processes, or activities that accomplish a business objective.",
+      "prototype_phrases": [
+        "workflow automation",
+        "workflow engine",
+        "workflow management",
+        "workflow orchestration",
+        "workflow design"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "pipeline",
+      "name": "Pipeline",
+      "category": "Operations",
+      "description": "A series of processing stages where output from one stage becomes input for the next.",
+      "prototype_phrases": [
+        "data pipeline",
+        "processing pipeline",
+        "pipeline execution",
+        "pipeline orchestration",
+        "CI/CD pipeline"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "schedule",
+      "name": "Schedule",
+      "category": "Operations",
+      "description": "The planned timing and sequencing of tasks, jobs, or operations to occur at specific times or intervals.",
+      "prototype_phrases": [
+        "task schedule",
+        "schedule management",
+        "schedule execution",
+        "schedule configuration",
+        "cron schedule"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "trigger",
+      "name": "Trigger",
+      "category": "Operations",
+      "description": "A condition or event that initiates the execution of a process, workflow, or action.",
+      "prototype_phrases": [
+        "event trigger",
+        "trigger condition",
+        "trigger management",
+        "trigger execution",
+        "trigger configuration"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "monitor",
+      "name": "Monitor",
+      "category": "Operations",
+      "description": "The continuous observation and tracking of system behavior, performance, and health metrics.",
+      "prototype_phrases": [
+        "system monitoring",
+        "monitoring tool",
+        "monitoring dashboard",
+        "monitoring alert",
+        "monitoring metrics"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "health",
+      "name": "Health",
+      "category": "Operations",
+      "description": "The operational status and wellness of systems, services, or components indicating their ability to function.",
+      "prototype_phrases": [
+        "health check",
+        "health monitoring",
+        "health status",
+        "health endpoint",
+        "health metrics"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "status",
+      "name": "Status",
+      "category": "Operations",
+      "description": "The current state or condition of an operation, process, or system component at a point in time.",
+      "prototype_phrases": [
+        "status check",
+        "status update",
+        "status monitoring",
+        "status report",
+        "status code"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "metric",
+      "name": "Metric",
+      "category": "Operations",
+      "description": "A quantifiable measurement used to track, assess, and compare system performance or business outcomes.",
+      "prototype_phrases": [
+        "performance metric",
+        "metric collection",
+        "metric analysis",
+        "metric dashboard",
+        "metric tracking"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "quality",
+      "name": "Quality",
+      "category": "Quality",
+      "description": "The degree to which a system, product, or service meets requirements and satisfies user expectations.",
+      "prototype_phrases": [
+        "quality assurance",
+        "quality control",
+        "quality metrics",
+        "quality standards",
+        "quality management"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "category": "Quality",
+      "description": "The measurement of how efficiently and effectively a system executes its functions under specific conditions.",
+      "prototype_phrases": [
+        "performance optimization",
+        "performance metrics",
+        "performance monitoring",
+        "performance testing",
+        "performance tuning"
+      ],
+      "default_weight": 0.7
+    },
+    {
+      "id": "reliability",
+      "name": "Reliability",
+      "category": "Quality",
+      "description": "The ability of a system to consistently perform its intended functions without failure over time.",
+      "prototype_phrases": [
+        "system reliability",
+        "reliability engineering",
+        "reliability metrics",
+        "reliability testing",
+        "reliability improvement"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "availability",
+      "name": "Availability",
+      "category": "Quality",
+      "description": "The degree to which a system is operational and accessible when required for use.",
+      "prototype_phrases": [
+        "high availability",
+        "availability metrics",
+        "availability monitoring",
+        "availability zone",
+        "availability SLA"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "scalability",
+      "name": "Scalability",
+      "category": "Quality",
+      "description": "The capacity of a system to handle increased load or expand to accommodate growth without performance degradation.",
+      "prototype_phrases": [
+        "horizontal scalability",
+        "scalability testing",
+        "scalability design",
+        "scalability pattern",
+        "scalability architecture"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "efficiency",
+      "name": "Efficiency",
+      "category": "Quality",
+      "description": "The optimal use of resources to achieve desired outcomes with minimal waste or overhead.",
+      "prototype_phrases": [
+        "operational efficiency",
+        "efficiency optimization",
+        "efficiency metrics",
+        "efficiency improvement",
+        "resource efficiency"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "optimization",
+      "name": "Optimization",
+      "category": "Quality",
+      "description": "The process of improving system performance, efficiency, or resource utilization through refinement and tuning.",
+      "prototype_phrases": [
+        "performance optimization",
+        "optimization strategy",
+        "optimization technique",
+        "optimization algorithm",
+        "optimization process"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "benchmark",
+      "name": "Benchmark",
+      "category": "Quality",
+      "description": "A standard or reference point used to measure and compare system performance or quality metrics.",
+      "prototype_phrases": [
+        "performance benchmark",
+        "benchmark testing",
+        "benchmark analysis",
+        "benchmark comparison",
+        "benchmark standard"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "test",
+      "name": "Test",
+      "category": "Quality",
+      "description": "The process of evaluating system functionality, performance, and quality to identify defects or verify requirements.",
+      "prototype_phrases": [
+        "test automation",
+        "test coverage",
+        "test framework",
+        "test strategy",
+        "test execution"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "quality_validation",
+      "name": "Quality Validation",
+      "category": "Quality",
+      "description": "The verification that products or systems meet specified quality standards and requirements.",
+      "prototype_phrases": [
+        "validation testing",
+        "validation process",
+        "validation criteria",
+        "validation framework",
+        "validation methodology"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "collaboration",
+      "name": "Collaboration",
+      "category": "Collaboration",
+      "description": "The cooperative effort of multiple individuals or teams working together toward shared objectives.",
+      "prototype_phrases": [
+        "collaboration platform",
+        "collaboration tool",
+        "collaboration workspace",
+        "team collaboration",
+        "collaboration management"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "team",
+      "name": "Team",
+      "category": "Collaboration",
+      "description": "A group of individuals working together with complementary skills toward common goals.",
+      "prototype_phrases": [
+        "team management",
+        "team collaboration",
+        "team structure",
+        "team workspace",
+        "team coordination"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "role",
+      "name": "Role",
+      "category": "Collaboration",
+      "description": "A defined set of responsibilities, permissions, and functions assigned to users or team members.",
+      "prototype_phrases": [
+        "role management",
+        "role assignment",
+        "role-based access",
+        "role definition",
+        "role permission"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "collab_permission",
+      "name": "Collaboration Permission",
+      "category": "Collaboration",
+      "description": "Access rights governing what users can view, edit, or share within collaborative environments.",
+      "prototype_phrases": [
+        "permission management",
+        "share permission",
+        "collaboration access",
+        "permission control",
+        "permission setting"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "share",
+      "name": "Share",
+      "category": "Collaboration",
+      "description": "The action of making resources, documents, or information accessible to other users or teams.",
+      "prototype_phrases": [
+        "resource sharing",
+        "document sharing",
+        "share management",
+        "share permission",
+        "share collaboration"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "review",
+      "name": "Review",
+      "category": "Collaboration",
+      "description": "The systematic examination and evaluation of work, code, or documents by peers or stakeholders.",
+      "prototype_phrases": [
+        "code review",
+        "review process",
+        "review workflow",
+        "review management",
+        "review feedback"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "approval",
+      "name": "Approval",
+      "category": "Collaboration",
+      "description": "The formal authorization or acceptance of changes, decisions, or deliverables before proceeding.",
+      "prototype_phrases": [
+        "approval workflow",
+        "approval process",
+        "approval management",
+        "approval request",
+        "approval status"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "comment",
+      "name": "Comment",
+      "category": "Collaboration",
+      "description": "Annotations, notes, or feedback attached to documents, code, or discussions for communication purposes.",
+      "prototype_phrases": [
+        "comment management",
+        "comment thread",
+        "comment system",
+        "comment tracking",
+        "comment notification"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "feedback",
+      "name": "Feedback",
+      "category": "Collaboration",
+      "description": "Information or opinions provided about work, performance, or deliverables to guide improvement.",
+      "prototype_phrases": [
+        "feedback loop",
+        "feedback management",
+        "feedback system",
+        "feedback collection",
+        "feedback analysis"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "version",
+      "name": "Version",
+      "category": "Collaboration",
+      "description": "A specific iteration or release of a document, code, or system identifying its state at a point in time.",
+      "prototype_phrases": [
+        "version control",
+        "version management",
+        "version tracking",
+        "version history",
+        "version release"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "category": "Knowledge",
+      "description": "Information, expertise, and understanding accumulated and organized for use in decision-making and problem-solving.",
+      "prototype_phrases": [
+        "knowledge management",
+        "knowledge base",
+        "knowledge sharing",
+        "knowledge repository",
+        "knowledge system"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "concept",
+      "name": "Concept",
+      "category": "Knowledge",
+      "description": "An abstract idea, principle, or mental construct that represents fundamental understanding within a domain.",
+      "prototype_phrases": [
+        "concept model",
+        "concept definition",
+        "concept mapping",
+        "concept understanding",
+        "concept documentation"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "definition",
+      "name": "Definition",
+      "category": "Knowledge",
+      "description": "A precise statement explaining the meaning, scope, or nature of a term, concept, or entity.",
+      "prototype_phrases": [
+        "definition management",
+        "definition clarity",
+        "definition standard",
+        "definition documentation",
+        "definition system"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "documentation",
+      "name": "Documentation",
+      "category": "Knowledge",
+      "description": "Written materials that describe systems, processes, code, or functionality for understanding and reference.",
+      "prototype_phrases": [
+        "technical documentation",
+        "documentation system",
+        "documentation management",
+        "documentation standards",
+        "documentation generation"
+      ],
+      "default_weight": 0.6
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "category": "Knowledge",
+      "description": "Information sources or materials consulted for facts, guidance, or authoritative knowledge.",
+      "prototype_phrases": [
+        "reference documentation",
+        "reference guide",
+        "reference material",
+        "reference system",
+        "reference management"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "guide",
+      "name": "Guide",
+      "category": "Knowledge",
+      "description": "Instructional materials that provide step-by-step directions or best practices for accomplishing tasks.",
+      "prototype_phrases": [
+        "user guide",
+        "implementation guide",
+        "best practice guide",
+        "guide documentation",
+        "guide system"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "tutorial",
+      "name": "Tutorial",
+      "category": "Knowledge",
+      "description": "Educational content designed to teach specific skills, concepts, or processes through guided instruction.",
+      "prototype_phrases": [
+        "tutorial system",
+        "tutorial guide",
+        "tutorial content",
+        "tutorial documentation",
+        "tutorial learning"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "example",
+      "name": "Example",
+      "category": "Knowledge",
+      "description": "Illustrative instances or samples that demonstrate concepts, usage, or implementation patterns.",
+      "prototype_phrases": [
+        "code example",
+        "example implementation",
+        "example documentation",
+        "example usage",
+        "example pattern"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "template",
+      "name": "Template",
+      "category": "Knowledge",
+      "description": "Reusable patterns or structures that provide a starting point for creating similar documents, code, or solutions.",
+      "prototype_phrases": [
+        "template design",
+        "template system",
+        "template management",
+        "template library",
+        "template usage"
+      ],
+      "default_weight": 0.5
+    },
+    {
+      "id": "best_practice",
+      "name": "Best Practice",
+      "category": "Knowledge",
+      "description": "Proven methods, techniques, or approaches that have been demonstrated to produce superior results.",
+      "prototype_phrases": [
+        "best practice guide",
+        "best practice documentation",
+        "best practice standard",
+        "best practice implementation",
+        "best practice methodology"
+      ],
+      "default_weight": 0.5
+    }
+  ]
+}

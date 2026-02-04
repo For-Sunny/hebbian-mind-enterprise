@@ -1,0 +1,142 @@
+{
+  "version": "2.0",
+  "nodes": [
+    {
+      "id": "consciousness",
+      "name": "Consciousness",
+      "keywords": [
+        "aware",
+        "conscious"
+      ],
+      "default_weight": 1.0
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "keywords": [
+        "remember",
+        "recall"
+      ],
+      "default_weight": 1.0
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "keywords": [
+        "self",
+        "who"
+      ],
+      "default_weight": 1.0
+    },
+    {
+      "id": "emotion",
+      "name": "Emotion",
+      "keywords": [
+        "feel",
+        "emotion"
+      ],
+      "default_weight": 0.8
+    },
+    {
+      "id": "reasoning",
+      "name": "Reasoning",
+      "keywords": [
+        "reason",
+        "logic"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "learning",
+      "name": "Learning",
+      "keywords": [
+        "learn",
+        "train"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "neural_network",
+      "name": "Neural Network",
+      "keywords": [
+        "neural",
+        "network"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "transformer",
+      "name": "Transformer",
+      "keywords": [
+        "transformer",
+        "attention"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "agent",
+      "name": "Agent",
+      "keywords": [
+        "agent",
+        "autonomous"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "mcp",
+      "name": "MCP",
+      "keywords": [
+        "mcp",
+        "protocol"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "hebbian",
+      "name": "Hebbian",
+      "keywords": [
+        "hebbian",
+        "fire",
+        "wire"
+      ],
+      "default_weight": 1.0
+    },
+    {
+      "id": "graph",
+      "name": "Graph",
+      "keywords": [
+        "graph",
+        "node",
+        "edge"
+      ],
+      "default_weight": 0.8
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "keywords": [
+        "knowledge",
+        "fact"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "alignment",
+      "name": "Alignment",
+      "keywords": [
+        "alignment",
+        "safe"
+      ],
+      "default_weight": 0.9
+    },
+    {
+      "id": "context",
+      "name": "Context",
+      "keywords": [
+        "context",
+        "window"
+      ],
+      "default_weight": 0.9
+    }
+  ]
+}
