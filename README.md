@@ -359,13 +359,23 @@ Enterprise support plans available.
 
 ## License
 
-Proprietary software. See [LICENSE](./LICENSE) for terms.
+Proprietary software. See [LICENSE](./LICENSE) and [EULA](./EULA.md) for terms.
 
-- **Individual**: Single developer, unlimited projects
-- **Team**: Up to 10 developers, single organization
-- **Enterprise**: Unlimited developers, single organization
+Per-developer licensing. See EULA for full terms including 90-day money-back guarantee.
 
 Redistribution prohibited.
+
+---
+
+## Intellectual Property Notice
+
+Copyright (c) 2025-2026 C.I.P.S. LLC. All rights reserved.
+
+Portions of the technology described herein are subject to pending patent application(s) filed with the United States Patent and Trademark Office. The methods, processes, and architectures embodied in this software -- including but not limited to Hebbian-based associative learning for knowledge graphs, co-activation edge strengthening, and GPU-optimized tensor operations for neural graph computation -- may be protected under one or more issued or pending patents.
+
+Unauthorized reproduction, reverse engineering, creation of derivative works, or commercial redistribution is strictly prohibited and may constitute infringement of intellectual property rights protected under U.S. and international law.
+
+For licensing inquiries: glass@cipscorps.io
 
 ---
 
