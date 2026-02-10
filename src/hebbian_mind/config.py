@@ -112,6 +112,29 @@ class Config:
     )
     MAX_EDGE_WEIGHT: float = float(os.getenv("HEBBIAN_MIND_MAX_WEIGHT", "10.0"))
 
+    # Memory decay parameters
+    DECAY_ENABLED: bool = (
+        os.getenv("HEBBIAN_MIND_DECAY_ENABLED", "true").lower() in ("true", "1", "yes")
+    )
+    DECAY_BASE_RATE: float = float(os.getenv("HEBBIAN_MIND_DECAY_BASE_RATE", "0.01"))
+    DECAY_THRESHOLD: float = float(os.getenv("HEBBIAN_MIND_DECAY_THRESHOLD", "0.1"))
+    DECAY_IMMORTAL_THRESHOLD: float = float(
+        os.getenv("HEBBIAN_MIND_DECAY_IMMORTAL_THRESHOLD", "0.9")
+    )
+    DECAY_SWEEP_INTERVAL: int = int(
+        os.getenv("HEBBIAN_MIND_DECAY_SWEEP_INTERVAL", "60")
+    )  # minutes
+
+    # Edge decay parameters
+    EDGE_DECAY_ENABLED: bool = (
+        os.getenv("HEBBIAN_MIND_EDGE_DECAY_ENABLED", "true").lower()
+        in ("true", "1", "yes")
+    )
+    EDGE_DECAY_RATE: float = float(os.getenv("HEBBIAN_MIND_EDGE_DECAY_RATE", "0.005"))
+    EDGE_DECAY_MIN_WEIGHT: float = float(
+        os.getenv("HEBBIAN_MIND_EDGE_DECAY_MIN_WEIGHT", "0.1")
+    )
+
     # Logging
     LOG_LEVEL: str = os.getenv("HEBBIAN_MIND_LOG_LEVEL", "INFO")
 
@@ -121,6 +144,20 @@ class Config:
         cls.DISK_DATA_DIR.mkdir(parents=True, exist_ok=True)
         if cls.RAM_DATA_DIR and cls.RAM_DISK_ENABLED:
             cls.RAM_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def get_decay_config(cls) -> dict:
+        """Return decay configuration as a dictionary."""
+        return {
+            "enabled": cls.DECAY_ENABLED,
+            "base_rate": cls.DECAY_BASE_RATE,
+            "threshold": cls.DECAY_THRESHOLD,
+            "immortal_threshold": cls.DECAY_IMMORTAL_THRESHOLD,
+            "sweep_interval_minutes": cls.DECAY_SWEEP_INTERVAL,
+            "edge_decay_enabled": cls.EDGE_DECAY_ENABLED,
+            "edge_decay_rate": cls.EDGE_DECAY_RATE,
+            "edge_decay_min_weight": cls.EDGE_DECAY_MIN_WEIGHT,
+        }
 
     @classmethod
     def check_ram_available(cls) -> bool:
@@ -155,4 +192,5 @@ class Config:
             "activation_threshold": cls.ACTIVATION_THRESHOLD,
             "edge_strengthening_factor": cls.EDGE_STRENGTHENING_FACTOR,
             "max_edge_weight": cls.MAX_EDGE_WEIGHT,
+            "decay": cls.get_decay_config(),
         }

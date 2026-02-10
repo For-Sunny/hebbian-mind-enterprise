@@ -22,6 +22,7 @@ import re
 import sqlite3
 import socket
 import sys
+import time
 import logging
 import shutil
 from pathlib import Path
@@ -30,6 +31,7 @@ from typing import Dict, List, Any, Optional
 from importlib import resources
 
 from .config import Config, sanitize_error_message
+from .decay import HebbianDecayEngine, calculate_effective_importance
 
 # Initialize configuration
 Config.ensure_directories()
@@ -192,6 +194,43 @@ class HebbianMindDatabase:
         # Apply schema to disk connection if dual-write
         if self.disk_conn:
             self.disk_conn.executescript(schema)
+            self.disk_conn.commit()
+
+        # === Decay column migrations ===
+        decay_migrations = [
+            "ALTER TABLE memories ADD COLUMN last_accessed REAL",
+            "ALTER TABLE memories ADD COLUMN effective_importance REAL",
+            "ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 0",
+        ]
+        for conn in [self.read_conn] + ([self.disk_conn] if self.disk_conn else []):
+            for migration in decay_migrations:
+                try:
+                    conn.execute(migration)
+                except sqlite3.OperationalError as e:
+                    if "duplicate column" not in str(e).lower():
+                        raise
+
+            # Backfill: set last_accessed from created_at, effective_importance from importance
+            conn.execute("""
+                UPDATE memories SET
+                    last_accessed = CAST(strftime('%s', created_at) AS REAL),
+                    effective_importance = importance,
+                    access_count = 0
+                WHERE last_accessed IS NULL
+            """)
+            conn.commit()
+
+        # Index for decay queries
+        self.read_conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_memories_effective_importance "
+            "ON memories(effective_importance)"
+        )
+        self.read_conn.commit()
+        if self.disk_conn:
+            self.disk_conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memories_effective_importance "
+                "ON memories(effective_importance)"
+            )
             self.disk_conn.commit()
 
     def _init_nodes_if_empty(self):
@@ -457,12 +496,15 @@ class HebbianMindDatabase:
                     importance: float = 0.5, emotional_intensity: float = 0.5) -> bool:
         """Save a memory with node activations and strengthen edges. DUAL-WRITE."""
         try:
-            # Insert memory
+            now = time.time()
+            # Insert memory with decay fields
             self._dual_write("""
                 INSERT OR REPLACE INTO memories
-                (memory_id, content, summary, source, importance, emotional_intensity)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (memory_id, content, summary, source, importance, emotional_intensity))
+                (memory_id, content, summary, source, importance, emotional_intensity,
+                 last_accessed, effective_importance, access_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+            """, (memory_id, content, summary, source, importance, emotional_intensity,
+                  now, importance))
 
             # Record activations and update node counts
             for activation in activations:
@@ -517,8 +559,19 @@ class HebbianMindDatabase:
                 WHERE source_id = ? AND target_id = ?
             """, (new_weight, id1, id2))
 
-    def query_by_nodes(self, node_names: List[str], limit: int = 20) -> List[Dict]:
-        """Query memories that activated specific nodes."""
+    def query_by_nodes(
+        self,
+        node_names: List[str],
+        limit: int = 20,
+        include_decayed: bool = False,
+    ) -> List[Dict]:
+        """Query memories that activated specific nodes.
+
+        Args:
+            node_names: List of node names to query
+            limit: Maximum results
+            include_decayed: If True, include memories below decay threshold
+        """
         cursor = self.read_conn.cursor()
 
         node_ids = []
@@ -531,6 +584,16 @@ class HebbianMindDatabase:
             return []
 
         placeholders = ','.join('?' * len(node_ids))
+
+        # Build decay filter
+        decay_filter = ""
+        decay_params: tuple = ()
+        if not include_decayed and Config.DECAY_ENABLED:
+            decay_filter = (
+                " AND (m.effective_importance IS NULL OR m.effective_importance >= ?)"
+            )
+            decay_params = (Config.DECAY_THRESHOLD,)
+
         cursor.execute(f"""
             SELECT DISTINCT m.*,
                    GROUP_CONCAT(n.name || ':' || ma.activation_score) as activations
@@ -538,12 +601,23 @@ class HebbianMindDatabase:
             JOIN memory_activations ma ON m.memory_id = ma.memory_id
             JOIN nodes n ON ma.node_id = n.id
             WHERE ma.node_id IN ({placeholders})
+            {decay_filter}
             GROUP BY m.id
             ORDER BY m.created_at DESC
             LIMIT ?
-        """, (*node_ids, limit))
+        """, (*node_ids, *decay_params, limit))
 
-        return [dict(row) for row in cursor.fetchall()]
+        results = [dict(row) for row in cursor.fetchall()]
+
+        # Touch accessed memories (fire-and-forget)
+        if results and hasattr(self, '_decay_engine') and self._decay_engine:
+            memory_ids = [r['memory_id'] for r in results]
+            try:
+                self._decay_engine.touch_memories(memory_ids)
+            except Exception:
+                pass  # Non-critical
+
+        return results
 
     def get_related_nodes(self, node_id: int, min_weight: float = 0.1) -> List[Dict]:
         """Get nodes connected via Hebbian edges."""
@@ -596,6 +670,11 @@ class HebbianMindDatabase:
         """)
         most_active = [dict(row) for row in cursor.fetchall()]
 
+        # Decay stats
+        decay_stats = {}
+        if hasattr(self, '_decay_engine') and self._decay_engine:
+            decay_stats = self._decay_engine.get_decay_stats()
+
         return {
             'node_count': node_count,
             'edge_count': edge_count,
@@ -608,7 +687,8 @@ class HebbianMindDatabase:
                 'using_ram': self.using_ram,
                 'ram_path': str(self.ram_path) if self.ram_path else None,
                 'disk_path': str(self.disk_path)
-            }
+            },
+            'decay': decay_stats,
         }
 
     def close(self):
@@ -675,6 +755,11 @@ class FaissTetherBridge:
 db = HebbianMindDatabase()
 tether = FaissTetherBridge()
 
+# Initialize decay engine
+decay_config = Config.get_decay_config()
+decay_engine = HebbianDecayEngine(db, decay_config)
+db._decay_engine = decay_engine  # Attach for access in query_by_nodes
+
 # Create MCP server
 server = Server("hebbian-mind")
 
@@ -700,12 +785,13 @@ async def list_tools() -> List[types.Tool]:
         ),
         types.Tool(
             name="query_mind",
-            description="Query memories by concept nodes. Returns memories that activated specified concepts.",
+            description="Query memories by concept nodes. Returns memories that activated specified concepts. Decayed memories are hidden by default.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "nodes": {"type": "array", "items": {"type": "string"}, "description": "List of node names to query"},
-                    "limit": {"type": "number", "description": "Max results (default: 20)"}
+                    "limit": {"type": "number", "description": "Max results (default: 20)"},
+                    "include_decayed": {"type": "boolean", "description": "Include decayed memories below threshold (default: false)"}
                 }
             }
         ),
@@ -831,6 +917,7 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
         elif name == "query_mind":
             nodes = arguments.get('nodes', [])
             limit = arguments.get('limit', 20)
+            include_decayed = arguments.get('include_decayed', False)
 
             if not nodes:
                 return [types.TextContent(
@@ -838,7 +925,7 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
                     text=json.dumps({"success": False, "message": "No nodes specified"}, indent=2)
                 )]
 
-            memories = db.query_by_nodes(nodes, limit)
+            memories = db.query_by_nodes(nodes, limit, include_decayed=include_decayed)
 
             return [types.TextContent(
                 type="text",
@@ -919,7 +1006,7 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
                 type="text",
                 text=json.dumps({
                     "success": True,
-                    "version": "2.1.0",
+                    "version": "2.2.0",
                     "status": "operational",
                     "statistics": {
                         "node_count": status['node_count'],
@@ -928,6 +1015,10 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
                         "total_activations": status['total_activations']
                     },
                     "dual_write": status['dual_write'],
+                    "decay": {
+                        "engine": decay_engine.get_status(),
+                        "stats": status.get('decay', {}),
+                    },
                     "precog_integration": {
                         "available": PRECOG_AVAILABLE,
                         "path": str(Config.PRECOG_PATH) if Config.PRECOG_PATH else None,
@@ -1077,18 +1168,36 @@ async def main():
     )
     args = parser.parse_args()
 
-    print("[HEBBIAN-MIND] Hebbian Mind Enterprise v2.1.0 starting", file=sys.stderr)
+    print("[HEBBIAN-MIND] Hebbian Mind Enterprise v2.2.0 starting", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (read): {db.ram_path if db.using_ram else db.disk_path}", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (write): {db.disk_path}", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Dual-write: {'ENABLED' if db.disk_conn else 'DISABLED'}", file=sys.stderr)
 
+    # Decay engine
+    dc = Config.get_decay_config()
+    if dc["enabled"] or dc["edge_decay_enabled"]:
+        parts = []
+        if dc["enabled"]:
+            parts.append(f"memory(rate={dc['base_rate']})")
+        if dc["edge_decay_enabled"]:
+            parts.append(f"edge(rate={dc['edge_decay_rate']})")
+        print(f"[HEBBIAN-MIND] Decay: {', '.join(parts)}, sweep every {dc['sweep_interval_minutes']}m", file=sys.stderr)
+    else:
+        print("[HEBBIAN-MIND] Decay: DISABLED", file=sys.stderr)
+
     if Config.FAISS_TETHER_ENABLED:
         print(f"[HEBBIAN-MIND] FAISS tether: {Config.FAISS_TETHER_HOST}:{Config.FAISS_TETHER_PORT}", file=sys.stderr)
 
-    if args.standalone:
-        await run_standalone()
-    else:
-        await run_stdio_server()
+    # Start decay engine
+    decay_engine.start()
+
+    try:
+        if args.standalone:
+            await run_standalone()
+        else:
+            await run_stdio_server()
+    finally:
+        decay_engine.stop()
 
 
 if __name__ == "__main__":

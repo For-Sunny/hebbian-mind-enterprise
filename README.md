@@ -1,8 +1,8 @@
 # Hebbian Mind Enterprise
 
-**Memory that learns.**
+**Memory that learns. Connections that fade.**
 
-An MCP server that builds knowledge graphs through use. Concepts connect when they activate together. The more you use it, the smarter it gets.
+An MCP server that builds knowledge graphs through use. Concepts connect when they activate together. Unused connections decay. The more you use it, the smarter it gets.
 
 ---
 
@@ -234,6 +234,31 @@ Check FAISS tether connection status.
 
 ---
 
+## Temporal Decay
+
+Memories and edges both decay over time unless reinforced.
+
+**Memory decay:** Same formula as CASCADE and PyTorch Memory. Memories lose effective importance over time. Accessed memories reset their clock. Immortal memories (importance >= 0.9) never decay.
+
+**Edge decay:** Connections between concepts weaken if not co-activated. This is the inverse of Hebbian learning -- "neurons that stop firing together, stop wiring together." Edges decay toward a minimum weight (0.1), never to zero, preserving the structure of learned associations.
+
+### Decay Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HEBBIAN_MIND_DECAY_ENABLED` | `true` | Enable memory decay |
+| `HEBBIAN_MIND_DECAY_BASE_RATE` | `0.01` | Base exponential decay rate |
+| `HEBBIAN_MIND_DECAY_THRESHOLD` | `0.1` | Memories below this are hidden |
+| `HEBBIAN_MIND_DECAY_IMMORTAL_THRESHOLD` | `0.9` | Memories at or above this never decay |
+| `HEBBIAN_MIND_DECAY_SWEEP_INTERVAL` | `60` | Minutes between sweep cycles |
+| `HEBBIAN_MIND_EDGE_DECAY_ENABLED` | `true` | Enable edge weight decay |
+| `HEBBIAN_MIND_EDGE_DECAY_RATE` | `0.005` | Edge decay rate (slower than memory decay) |
+| `HEBBIAN_MIND_EDGE_DECAY_MIN_WEIGHT` | `0.1` | Minimum edge weight floor |
+
+Decayed memories are hidden from `query_mind` by default. Pass `include_decayed: true` to retrieve them.
+
+---
+
 ## Architecture
 
 ### Dual-Write Pattern
@@ -359,23 +384,13 @@ Enterprise support plans available.
 
 ## License
 
-Proprietary software. See [LICENSE](./LICENSE) and [EULA](./EULA.md) for terms.
+Proprietary software. See [LICENSE](./LICENSE) for terms.
 
-Per-developer licensing. See EULA for full terms including 90-day money-back guarantee.
+- **Individual**: Single developer, unlimited projects
+- **Team**: Up to 10 developers, single organization
+- **Enterprise**: Unlimited developers, single organization
 
 Redistribution prohibited.
-
----
-
-## Intellectual Property Notice
-
-Copyright (c) 2025-2026 C.I.P.S. LLC. All rights reserved.
-
-Portions of the technology described herein are subject to pending patent application(s) filed with the United States Patent and Trademark Office. The methods, processes, and architectures embodied in this software -- including but not limited to Hebbian-based associative learning for knowledge graphs, co-activation edge strengthening, and GPU-optimized tensor operations for neural graph computation -- may be protected under one or more issued or pending patents.
-
-Unauthorized reproduction, reverse engineering, creation of derivative works, or commercial redistribution is strictly prohibited and may constitute infringement of intellectual property rights protected under U.S. and international law.
-
-For licensing inquiries: glass@cipscorps.io
 
 ---
 

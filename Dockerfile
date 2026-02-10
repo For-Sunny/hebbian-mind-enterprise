@@ -90,7 +90,16 @@ ENV PYTHONUNBUFFERED=1 \
     HEBBIAN_MIND_FAISS_PORT=9998 \
     # PRECOG integration (disabled by default)
     HEBBIAN_MIND_PRECOG_ENABLED=false \
-    HEBBIAN_MIND_PRECOG_PATH=""
+    HEBBIAN_MIND_PRECOG_PATH="" \
+    # Temporal decay (enabled by default)
+    HEBBIAN_MIND_DECAY_ENABLED=true \
+    HEBBIAN_MIND_DECAY_BASE_RATE=0.01 \
+    HEBBIAN_MIND_DECAY_THRESHOLD=0.1 \
+    HEBBIAN_MIND_DECAY_IMMORTAL_THRESHOLD=0.9 \
+    HEBBIAN_MIND_DECAY_SWEEP_INTERVAL=60 \
+    HEBBIAN_MIND_EDGE_DECAY_ENABLED=true \
+    HEBBIAN_MIND_EDGE_DECAY_RATE=0.005 \
+    HEBBIAN_MIND_EDGE_DECAY_MIN_WEIGHT=0.1
 
 # No port exposure - MCP uses stdio by default
 # For future HTTP/socket API, expose port here
@@ -106,7 +115,7 @@ USER hebbian
 LABEL org.opencontainers.image.title="hebbian-mind-enterprise" \
       org.opencontainers.image.description="Neural Graph Memory System with Hebbian Learning" \
       org.opencontainers.image.vendor="CIPS LLC" \
-      org.opencontainers.image.version="2.1.0" \
+      org.opencontainers.image.version="2.2.0" \
       org.opencontainers.image.licenses="Proprietary"
 
 # Entry point - run the MCP server in standalone mode for Docker
