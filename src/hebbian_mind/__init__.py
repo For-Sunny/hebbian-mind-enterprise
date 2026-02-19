@@ -6,7 +6,7 @@ Copyright (c) 2026 CIPS LLC
 All rights reserved.
 """
 
-__version__ = "2.2.0"
+__version__ = "2.3.1"
 __author__ = "CIPS LLC"
 
 from .server import main

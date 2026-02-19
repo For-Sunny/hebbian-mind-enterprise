@@ -3,7 +3,7 @@
 # Neural Graph Memory System with Hebbian Learning
 # ============================================================================
 # Author: CIPS LLC
-# License: Proprietary - CIPS LLC
+# License: MIT
 # ============================================================================
 
 # ===========================================================================
@@ -104,9 +104,16 @@ ENV PYTHONUNBUFFERED=1 \
 # No port exposure - MCP uses stdio by default
 # For future HTTP/socket API, expose port here
 
-# Health check - verify database is accessible
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import sqlite3; from pathlib import Path; db_path = Path('/data/hebbian_mind/disk/hebbian_mind.db'); exit(0 if db_path.parent.exists() else 1)" || exit 1
+# Health check - verify database is queryable and schema is intact
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "\
+import sqlite3, sys; \
+conn = sqlite3.connect('/data/hebbian_mind/disk/hebbian_mind.db'); \
+tables = {r[0] for r in conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()}; \
+required = {'nodes', 'edges', 'memories', 'memory_activations'}; \
+missing = required - tables; \
+conn.close(); \
+sys.exit(1 if missing else 0)" || exit 1
 
 # Switch to non-root user
 USER hebbian
@@ -115,8 +122,8 @@ USER hebbian
 LABEL org.opencontainers.image.title="hebbian-mind-enterprise" \
       org.opencontainers.image.description="Neural Graph Memory System with Hebbian Learning" \
       org.opencontainers.image.vendor="CIPS LLC" \
-      org.opencontainers.image.version="2.2.0" \
-      org.opencontainers.image.licenses="Proprietary"
+      org.opencontainers.image.version="2.3.1" \
+      org.opencontainers.image.licenses="MIT"
 
 # Entry point - run the MCP server in standalone mode for Docker
 # Standalone mode keeps container alive for health checks

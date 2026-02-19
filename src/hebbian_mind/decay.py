@@ -252,12 +252,7 @@ class HebbianDecayEngine:
                 stats["memories_swept"] += 1
                 continue
 
-            # Dual-write: RAM first, then disk
-            conn.execute(
-                "UPDATE memories SET effective_importance = ? WHERE memory_id = ?",
-                (new_effective, memory_id),
-            )
-
+            # Dual-write: disk first (crash-safe truth), then RAM
             if disk_conn:
                 try:
                     disk_conn.execute(
@@ -267,17 +262,23 @@ class HebbianDecayEngine:
                 except Exception as e:
                     logger.warning(f"[DECAY] Disk write failed for memory {memory_id}: {e}")
 
+            conn.execute(
+                "UPDATE memories SET effective_importance = ? WHERE memory_id = ?",
+                (new_effective, memory_id),
+            )
+
             if new_effective < self.config["threshold"]:
                 stats["memories_decayed"] += 1
 
             stats["memories_swept"] += 1
 
-        conn.commit()
+        # Commit disk first, then RAM
         if disk_conn:
             try:
                 disk_conn.commit()
             except Exception:
                 pass
+        conn.commit()
 
         return stats
 
@@ -326,12 +327,7 @@ class HebbianDecayEngine:
                 stats["edges_swept"] += 1
                 continue
 
-            # Dual-write
-            conn.execute(
-                "UPDATE edges SET weight = ? WHERE id = ?",
-                (new_weight, edge_id),
-            )
-
+            # Dual-write: disk first (crash-safe truth), then RAM
             if disk_conn:
                 try:
                     disk_conn.execute(
@@ -341,17 +337,23 @@ class HebbianDecayEngine:
                 except Exception as e:
                     logger.warning(f"[DECAY] Disk write failed for edge {edge_id}: {e}")
 
+            conn.execute(
+                "UPDATE edges SET weight = ? WHERE id = ?",
+                (new_weight, edge_id),
+            )
+
             if new_weight <= min_weight + 0.0001:
                 stats["edges_decayed"] += 1
 
             stats["edges_swept"] += 1
 
-        conn.commit()
+        # Commit disk first, then RAM
         if disk_conn:
             try:
                 disk_conn.commit()
             except Exception:
                 pass
+        conn.commit()
 
         return stats
 
@@ -391,6 +393,8 @@ class HebbianDecayEngine:
     def touch_memories(self, memory_ids: list):
         """Update last_accessed and access_count for queried memories.
 
+        Thread-safe: acquires db._lock to prevent concurrent modification.
+
         Args:
             memory_ids: List of memory_id strings to touch
         """
@@ -401,33 +405,36 @@ class HebbianDecayEngine:
         conn = self.db.read_conn
         disk_conn = self.db.disk_conn
 
-        for memory_id in memory_ids:
-            conn.execute(
-                """UPDATE memories SET
-                    last_accessed = ?,
-                    access_count = COALESCE(access_count, 0) + 1
-                WHERE memory_id = ?""",
-                (now, memory_id),
-            )
+        with self.db._lock:
+            for memory_id in memory_ids:
+                # Disk first (crash-safe truth), then RAM
+                if disk_conn:
+                    try:
+                        disk_conn.execute(
+                            """UPDATE memories SET
+                                last_accessed = ?,
+                                access_count = COALESCE(access_count, 0) + 1
+                            WHERE memory_id = ?""",
+                            (now, memory_id),
+                        )
+                    except Exception as e:
+                        logger.warning(f"[DECAY] Disk touch failed for {memory_id}: {e}")
 
+                conn.execute(
+                    """UPDATE memories SET
+                        last_accessed = ?,
+                        access_count = COALESCE(access_count, 0) + 1
+                    WHERE memory_id = ?""",
+                    (now, memory_id),
+                )
+
+            # Commit disk first, then RAM
             if disk_conn:
                 try:
-                    disk_conn.execute(
-                        """UPDATE memories SET
-                            last_accessed = ?,
-                            access_count = COALESCE(access_count, 0) + 1
-                        WHERE memory_id = ?""",
-                        (now, memory_id),
-                    )
-                except Exception as e:
-                    logger.warning(f"[DECAY] Disk touch failed for {memory_id}: {e}")
-
-        conn.commit()
-        if disk_conn:
-            try:
-                disk_conn.commit()
-            except Exception:
-                pass
+                    disk_conn.commit()
+                except Exception:
+                    pass
+            conn.commit()
 
     def get_status(self) -> dict:
         """Return decay engine status."""

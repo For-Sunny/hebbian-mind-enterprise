@@ -9,7 +9,7 @@ MCP server implementing Hebbian learning for associative memory.
 DUAL-WRITE ARCHITECTURE
 - RAM disk for instant reads (optional)
 - Disk storage for permanent truth
-- WRITE: RAM first (speed) -> Disk second (persistence)
+- WRITE: Disk first (crash-safe) -> RAM second (speed)
 - READ: RAM (instant) with disk fallback
 - Copy disk to RAM on startup if RAM empty
 
@@ -17,6 +17,7 @@ Copyright (c) 2026 CIPS LLC
 All rights reserved.
 """
 
+import asyncio
 import json
 import re
 import sqlite3
@@ -25,6 +26,8 @@ import sys
 import time
 import logging
 import shutil
+import threading
+import uuid
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -51,6 +54,16 @@ if Config.PRECOG_ENABLED and Config.PRECOG_PATH:
         print("[HEBBIAN-MIND] PRECOG ConceptExtractor loaded successfully", file=sys.stderr)
     except ImportError as e:
         print(f"[HEBBIAN-MIND] PRECOG ConceptExtractor not available: {e}", file=sys.stderr)
+
+# Anti-saturation parameters (Feb 16, 2026)
+LEARNING_RATE = 0.1          # Asymptotic approach rate
+MAX_WEIGHT = 10.0            # Maximum edge weight (unchanged)
+MIN_WEIGHT = 0.1             # Minimum edge weight
+TARGET_TOTAL_WEIGHT = 50.0   # Target sum of edge weights per node
+SCALING_RATE = 0.3           # Homeostatic scaling factor (27% correction per tick)
+DECAY_IDLE_THRESHOLD = 3600  # 1 hour in seconds - edges idle longer than this decay
+DECAY_IDLE_RATE = 0.02       # 2% weight loss per homeostatic tick for idle edges
+HOMEOSTATIC_INTERVAL = 5     # Apply homeostatic scaling every N co-activations
 
 # MCP SDK imports
 try:
@@ -79,9 +92,13 @@ class HebbianMindDatabase:
         self.using_ram = False
         self.read_conn = None   # Primary read connection (RAM if available)
         self.disk_conn = None   # Secondary write connection (disk - truth)
+        self._in_transaction = False
+        self._coactivation_count = 0
+        self._lock = threading.RLock()  # Serialize all DB access across threads
 
         self._init_connections()
         self._init_schema()
+        self._ensure_last_coactivated_column()
         self._init_nodes_if_empty()
 
     def _init_connections(self):
@@ -185,6 +202,11 @@ class HebbianMindDatabase:
             CREATE INDEX IF NOT EXISTS idx_nodes_category ON nodes(category);
             CREATE INDEX IF NOT EXISTS idx_edges_weight ON edges(weight);
             CREATE INDEX IF NOT EXISTS idx_memories_source ON memories(source);
+
+            -- Performance indexes (Feb 16, 2026)
+            CREATE INDEX IF NOT EXISTS idx_edges_target_id ON edges(target_id);
+            CREATE INDEX IF NOT EXISTS idx_memact_memory_id ON memory_activations(memory_id);
+            CREATE INDEX IF NOT EXISTS idx_memact_node_id ON memory_activations(node_id);
         """
 
         # Apply schema to read connection (RAM or disk)
@@ -232,6 +254,18 @@ class HebbianMindDatabase:
                 "ON memories(effective_importance)"
             )
             self.disk_conn.commit()
+
+    def _ensure_last_coactivated_column(self):
+        """Add last_coactivated column to edges table if missing (schema migration)."""
+        connections = [self.read_conn]
+        if self.disk_conn and self.disk_conn != self.read_conn:
+            connections.append(self.disk_conn)
+        for conn in connections:
+            cursor = conn.execute("PRAGMA table_info(edges)")
+            columns = [row[1] if isinstance(row, tuple) else row['name'] for row in cursor.fetchall()]
+            if "last_coactivated" not in columns:
+                conn.execute("ALTER TABLE edges ADD COLUMN last_coactivated REAL")
+                conn.commit()
 
     def _init_nodes_if_empty(self):
         """Load nodes from nodes_v2.json if table is empty.
@@ -352,40 +386,108 @@ class HebbianMindDatabase:
                     self._create_edge(id1, id2, 0.1)
 
     def _create_edge(self, source_id: int, target_id: int, weight: float = 0.1):
-        """Create an edge on both connections."""
+        """Create edge between nodes with initial weight.
+
+        Only used during initialization for category edges.
+        Uses dual-write and time.time() for consistency with the rest of the codebase.
+        """
         # Ensure consistent ordering
         id1, id2 = min(source_id, target_id), max(source_id, target_id)
+        now = time.time()
 
-        sql = """
-            INSERT OR IGNORE INTO edges (source_id, target_id, weight, co_activation_count, last_strengthened)
-            VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
-        """
+        # Check if edge exists
+        cursor = self.read_conn.execute(
+            "SELECT id FROM edges WHERE source_id = ? AND target_id = ?",
+            (id1, id2)
+        )
+        existing = cursor.fetchone()
+        if existing:
+            return existing[0]
 
-        self.read_conn.execute(sql, (id1, id2, weight))
-        self.read_conn.commit()
+        # Create new edge using dual-write pattern
+        self._dual_write(
+            """INSERT INTO edges
+               (source_id, target_id, weight, co_activation_count, last_strengthened, last_coactivated)
+               VALUES (?, ?, ?, 0, ?, ?)""",
+            (id1, id2, weight, now, now)
+        )
 
-        if self.disk_conn:
-            self.disk_conn.execute(sql, (id1, id2, weight))
-            self.disk_conn.commit()
+        # Get the created edge ID
+        cursor = self.read_conn.execute(
+            "SELECT id FROM edges WHERE source_id = ? AND target_id = ?",
+            (id1, id2)
+        )
+        row = cursor.fetchone()
+        return row[0] if row else None
 
     def _dual_write(self, sql: str, params: tuple = ()):
-        """Execute write on both RAM and disk connections."""
-        self.read_conn.execute(sql, params)
-        self.read_conn.commit()
+        """Execute SQL on both disk and RAM, skip commits if in transaction.
 
-        if self.disk_conn:
-            try:
+        Thread-safe: acquires _lock if not already held (RLock is reentrant).
+        """
+        with self._lock:
+            if self.disk_conn:
+                # Write to disk first (crash-safe)
                 self.disk_conn.execute(sql, params)
+                if not self._in_transaction:
+                    self.disk_conn.commit()
+
+                # Write to RAM second (failure is non-fatal)
+                try:
+                    self.read_conn.execute(sql, params)
+                    if not self._in_transaction:
+                        self.read_conn.commit()
+                except Exception as e:
+                    logger.warning(f"RAM write failed: {e}")
+            else:
+                # Single-write mode (disk only, no separate disk_conn)
+                self.read_conn.execute(sql, params)
+                if not self._in_transaction:
+                    self.read_conn.commit()
+
+    def _begin_transaction(self):
+        """Begin transaction on both disk and RAM connections."""
+        if self.disk_conn:
+            self.disk_conn.execute("BEGIN")
+        self.read_conn.execute("BEGIN")
+        self._in_transaction = True
+
+    def _commit_transaction(self):
+        """Commit transaction on both connections."""
+        try:
+            if self.disk_conn:
                 self.disk_conn.commit()
+            self.read_conn.commit()
+        finally:
+            self._in_transaction = False
+
+    def _rollback_transaction(self):
+        """Rollback transaction on both connections."""
+        try:
+            if self.disk_conn:
+                try:
+                    self.disk_conn.rollback()
+                except Exception as e:
+                    logger.warning(f"Disk rollback failed: {e}")
+
+            try:
+                self.read_conn.rollback()
             except Exception as e:
-                print(f"[HEBBIAN-MIND] WARNING: Disk write failed: {e}", file=sys.stderr)
+                logger.warning(f"RAM rollback failed: {e}")
+        finally:
+            self._in_transaction = False
 
     # ============ NODE OPERATIONS ============
 
-    def get_all_nodes(self) -> List[Dict]:
-        """Get all concept nodes."""
+    def get_all_nodes(self, limit: int = 10000) -> List[Dict]:
+        """Get all concept nodes with safety limit.
+
+        Args:
+            limit: Maximum number of nodes to return (default 10000).
+                   Prevents unbounded memory consumption on large graphs.
+        """
         cursor = self.read_conn.cursor()
-        cursor.execute("SELECT * FROM nodes ORDER BY category, name")
+        cursor.execute("SELECT * FROM nodes ORDER BY category, name LIMIT ?", (limit,))
         return [dict(row) for row in cursor.fetchall()]
 
     def get_node_by_name(self, name: str) -> Optional[Dict]:
@@ -494,70 +596,159 @@ class HebbianMindDatabase:
     def save_memory(self, memory_id: str, content: str, summary: str,
                     source: str, activations: List[Dict],
                     importance: float = 0.5, emotional_intensity: float = 0.5) -> bool:
-        """Save a memory with node activations and strengthen edges. DUAL-WRITE."""
-        try:
-            now = time.time()
-            # Insert memory with decay fields
-            self._dual_write("""
-                INSERT OR REPLACE INTO memories
-                (memory_id, content, summary, source, importance, emotional_intensity,
-                 last_accessed, effective_importance, access_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-            """, (memory_id, content, summary, source, importance, emotional_intensity,
-                  now, importance))
+        """Save a memory with all activations and edges in single transaction.
 
-            # Record activations and update node counts
-            for activation in activations:
+        Thread-safe: entire operation runs under _lock.
+
+        Raises:
+            RuntimeError: On failure, with details about what went wrong.
+        """
+        with self._lock:
+            try:
+                self._begin_transaction()
+
+                now = time.time()
+                # Insert memory (no OR REPLACE -- UUID prevents collisions,
+                # and we must never silently overwrite existing memories)
                 self._dual_write("""
-                    INSERT INTO memory_activations (memory_id, node_id, activation_score)
-                    VALUES (?, ?, ?)
-                """, (memory_id, activation['node_id'], activation['score']))
+                    INSERT INTO memories
+                    (memory_id, content, summary, source, importance, emotional_intensity,
+                     last_accessed, effective_importance, access_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                """, (memory_id, content, summary, source, importance, emotional_intensity,
+                      now, importance))
 
-                self._dual_write("""
-                    UPDATE nodes SET
-                        activation_count = activation_count + 1,
-                        last_activated = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (activation['node_id'],))
+                # Record activations and update node counts
+                for activation in activations:
+                    self._dual_write("""
+                        INSERT INTO memory_activations (memory_id, node_id, activation_score)
+                        VALUES (?, ?, ?)
+                    """, (memory_id, activation['node_id'], activation['score']))
 
-            # Hebbian learning: strengthen edges between co-activated nodes
-            node_ids = [a['node_id'] for a in activations]
-            for i, source_id in enumerate(node_ids):
-                for target_id in node_ids[i+1:]:
-                    self._strengthen_edge(source_id, target_id)
+                    self._dual_write("""
+                        UPDATE nodes SET
+                            activation_count = activation_count + 1,
+                            last_activated = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (activation['node_id'],))
 
-            return True
+                # Hebbian learning: strengthen edges between co-activated nodes
+                node_ids = [a['node_id'] for a in activations]
+                for i, source_id in enumerate(node_ids):
+                    for target_id in node_ids[i+1:]:
+                        self._strengthen_edge(source_id, target_id)
 
-        except Exception as e:
-            print(f"[HEBBIAN-MIND] Error saving memory: {e}", file=sys.stderr)
-            return False
+                # Homeostatic maintenance every N co-activations
+                self._coactivation_count += 1
+                if self._coactivation_count % HOMEOSTATIC_INTERVAL == 0:
+                    self._apply_time_decay()
+                    self._apply_homeostatic_scaling()
+
+                self._commit_transaction()
+                return True
+
+            except Exception as e:
+                logger.error(f"save_memory failed: {e}")
+                self._rollback_transaction()
+                raise RuntimeError(
+                    f"save_memory failed for memory_id={memory_id}: {e}"
+                ) from e
 
     def _strengthen_edge(self, source_id: int, target_id: int):
-        """Hebbian edge strengthening with dual-write."""
+        """Strengthen edge using asymptotic formula (anti-saturation)."""
         id1, id2 = min(source_id, target_id), max(source_id, target_id)
 
         cursor = self.read_conn.cursor()
         cursor.execute("SELECT weight FROM edges WHERE source_id = ? AND target_id = ?", (id1, id2))
         row = cursor.fetchone()
 
+        now = time.time()
+
         if not row:
             self._dual_write("""
-                INSERT INTO edges (source_id, target_id, weight, co_activation_count, last_strengthened)
-                VALUES (?, ?, 0.15, 1, CURRENT_TIMESTAMP)
-            """, (id1, id2))
+                INSERT INTO edges (source_id, target_id, weight, co_activation_count, last_strengthened, last_coactivated)
+                VALUES (?, ?, 0.15, 1, ?, ?)
+            """, (id1, id2, now, now))
         else:
-            # Hebbian: weight += strengthening_factor / (1 + current_weight), cap at max_weight
             current = row['weight']
-            strengthening = Config.EDGE_STRENGTHENING_FACTOR / (1 + current)
-            new_weight = min(current + strengthening, Config.MAX_EDGE_WEIGHT)
+
+            # Asymptotic formula: delta approaches 0 as weight approaches MAX
+            delta = (MAX_WEIGHT - current) * LEARNING_RATE
+
+            # Clamp to [MIN_WEIGHT, MAX_WEIGHT]
+            new_weight = max(MIN_WEIGHT, min(MAX_WEIGHT, current + delta))
 
             self._dual_write("""
                 UPDATE edges SET
                     weight = ?,
                     co_activation_count = co_activation_count + 1,
-                    last_strengthened = CURRENT_TIMESTAMP
+                    last_strengthened = ?,
+                    last_coactivated = ?
                 WHERE source_id = ? AND target_id = ?
-            """, (new_weight, id1, id2))
+            """, (new_weight, now, now, id1, id2))
+
+    def _apply_time_decay(self):
+        """Apply time-based decay to idle edges."""
+        now = time.time()
+        threshold_time = now - DECAY_IDLE_THRESHOLD
+
+        # Find edges idle longer than threshold
+        query = """
+            SELECT id, weight, last_coactivated, last_strengthened
+            FROM edges
+            WHERE COALESCE(last_coactivated, last_strengthened, 0) < ?
+              AND weight > ?
+        """
+        cursor = self.read_conn.execute(query, (threshold_time, MIN_WEIGHT))
+        idle_edges = cursor.fetchall()
+
+        for row in idle_edges:
+            edge_id = row['id'] if isinstance(row, sqlite3.Row) else row[0]
+            weight = row['weight'] if isinstance(row, sqlite3.Row) else row[1]
+
+            # Decay by DECAY_IDLE_RATE (2% per tick)
+            new_weight = max(MIN_WEIGHT, weight * (1.0 - DECAY_IDLE_RATE))
+
+            self._dual_write(
+                "UPDATE edges SET weight = ? WHERE id = ?",
+                (new_weight, edge_id)
+            )
+
+    def _apply_homeostatic_scaling(self):
+        """Apply homeostatic scaling to prevent saturation.
+
+        Computes total edge weight per node bidirectionally (as both source and target),
+        since all edges are stored with source_id = min(a,b), target_id = max(a,b).
+        Scales all edges connected to over-target nodes in both directions.
+        """
+        query = """
+            SELECT node_id, SUM(weight) as total_weight
+            FROM (
+                SELECT source_id AS node_id, weight FROM edges
+                UNION ALL
+                SELECT target_id AS node_id, weight FROM edges
+            )
+            GROUP BY node_id
+            HAVING total_weight > ?
+        """
+        cursor = self.read_conn.execute(query, (TARGET_TOTAL_WEIGHT,))
+        over_target_nodes = cursor.fetchall()
+
+        for row in over_target_nodes:
+            node_id = row['node_id'] if isinstance(row, sqlite3.Row) else row[0]
+            total_weight = row['total_weight'] if isinstance(row, sqlite3.Row) else row[1]
+
+            # Calculate scaling factor
+            scale = 1.0 - SCALING_RATE * (total_weight - TARGET_TOTAL_WEIGHT) / total_weight
+
+            # Clamp to [0.5, 2.0] safety range
+            scale = max(0.5, min(2.0, scale))
+
+            # Scale all edges connected to this node (both directions)
+            self._dual_write(
+                "UPDATE edges SET weight = weight * ? WHERE source_id = ? OR target_id = ?",
+                (scale, node_id, node_id)
+            )
 
     def query_by_nodes(
         self,
@@ -567,49 +758,56 @@ class HebbianMindDatabase:
     ) -> List[Dict]:
         """Query memories that activated specific nodes.
 
+        Thread-safe: runs under _lock.
+
         Args:
             node_names: List of node names to query
-            limit: Maximum results
+            limit: Maximum results (clamped to 1-500)
             include_decayed: If True, include memories below decay threshold
         """
-        cursor = self.read_conn.cursor()
+        # Clamp limit to safe range (H1 fix)
+        limit = max(1, min(500, limit))
 
-        node_ids = []
-        for name in node_names:
-            node = self.get_node_by_name(name)
-            if node:
-                node_ids.append(node['id'])
+        with self._lock:
+            cursor = self.read_conn.cursor()
 
-        if not node_ids:
-            return []
+            node_ids = []
+            for name in node_names:
+                node = self.get_node_by_name(name)
+                if node:
+                    node_ids.append(node['id'])
 
-        placeholders = ','.join('?' * len(node_ids))
+            if not node_ids:
+                return []
 
-        # Build decay filter
-        decay_filter = ""
-        decay_params: tuple = ()
-        if not include_decayed and Config.DECAY_ENABLED:
-            decay_filter = (
-                " AND (m.effective_importance IS NULL OR m.effective_importance >= ?)"
-            )
-            decay_params = (Config.DECAY_THRESHOLD,)
+            # Parameterized IN clause: placeholders are '?,?,?' with values bound safely
+            placeholders = ','.join('?' * len(node_ids))
 
-        cursor.execute(f"""
-            SELECT DISTINCT m.*,
-                   GROUP_CONCAT(n.name || ':' || ma.activation_score) as activations
-            FROM memories m
-            JOIN memory_activations ma ON m.memory_id = ma.memory_id
-            JOIN nodes n ON ma.node_id = n.id
-            WHERE ma.node_id IN ({placeholders})
-            {decay_filter}
-            GROUP BY m.id
-            ORDER BY m.created_at DESC
-            LIMIT ?
-        """, (*node_ids, *decay_params, limit))
+            # Build decay filter (static SQL fragment, threshold bound via params)
+            decay_filter = ""
+            decay_params: tuple = ()
+            if not include_decayed and Config.DECAY_ENABLED:
+                decay_filter = (
+                    " AND (m.effective_importance IS NULL OR m.effective_importance >= ?)"
+                )
+                decay_params = (Config.DECAY_THRESHOLD,)
 
-        results = [dict(row) for row in cursor.fetchall()]
+            cursor.execute(f"""
+                SELECT DISTINCT m.*,
+                       GROUP_CONCAT(n.name || ':' || ma.activation_score) as activations
+                FROM memories m
+                JOIN memory_activations ma ON m.memory_id = ma.memory_id
+                JOIN nodes n ON ma.node_id = n.id
+                WHERE ma.node_id IN ({placeholders})
+                {decay_filter}
+                GROUP BY m.id
+                ORDER BY m.created_at DESC
+                LIMIT ?
+            """, (*node_ids, *decay_params, limit))
 
-        # Touch accessed memories (fire-and-forget)
+            results = [dict(row) for row in cursor.fetchall()]
+
+        # Touch accessed memories (fire-and-forget, outside lock)
         if results and hasattr(self, '_decay_engine') and self._decay_engine:
             memory_ids = [r['memory_id'] for r in results]
             try:
@@ -717,7 +915,7 @@ class FaissTetherBridge:
             sock.connect((self.host, self.port))
             sock.close()
             return True
-        except:
+        except Exception:
             return False
 
     def search(self, query: str, top_k: int = 10) -> Dict:
@@ -854,17 +1052,46 @@ async def list_tools() -> List[types.Tool]:
     ]
 
 
+def _validate_string(value: Any, name: str, max_length: int = 100000) -> str:
+    """Validate and return a string parameter."""
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be a string, got {type(value).__name__}")
+    if len(value) == 0:
+        raise ValueError(f"{name} must not be empty")
+    if len(value) > max_length:
+        raise ValueError(f"{name} exceeds maximum length of {max_length}")
+    return value
+
+
+def _validate_number(value: Any, name: str, min_val: float = None, max_val: float = None) -> float:
+    """Validate and return a numeric parameter."""
+    if not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a number, got {type(value).__name__}")
+    val = float(value)
+    if min_val is not None and val < min_val:
+        raise ValueError(f"{name} must be >= {min_val}, got {val}")
+    if max_val is not None and val > max_val:
+        raise ValueError(f"{name} must be <= {max_val}, got {val}")
+    return val
+
+
 @server.call_tool()
 async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
-    """Handle tool calls."""
+    """Handle tool calls with input validation."""
 
     try:
         if name == "save_to_mind":
-            content = arguments['content']
+            content = _validate_string(arguments.get('content', ''), 'content')
             summary = arguments.get('summary', '')
+            if summary:
+                summary = _validate_string(summary, 'summary', max_length=10000)
             source = arguments.get('source', 'HEBBIAN_MIND')
-            importance = arguments.get('importance', 0.5)
-            emotional_intensity = arguments.get('emotional_intensity', 0.5)
+            if source:
+                source = _validate_string(source, 'source', max_length=200)
+            importance = _validate_number(
+                arguments.get('importance', 0.5), 'importance', 0.0, 1.0)
+            emotional_intensity = _validate_number(
+                arguments.get('emotional_intensity', 0.5), 'emotional_intensity', 0.0, 1.0)
 
             activations = db.analyze_content(content)
 
@@ -878,16 +1105,27 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
                     }, indent=2)
                 )]
 
-            memory_id = f"hebbian_mind_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{hash(content) % 10000}"
+            memory_id = f"hebbian_mind_{uuid.uuid4().hex[:16]}"
 
             if not summary:
                 top_nodes = [a['name'] for a in activations[:5]]
                 summary = f"Activated {len(activations)} concepts: {', '.join(top_nodes)}"
 
-            success = db.save_memory(
-                memory_id, content, summary, source, activations,
-                importance, emotional_intensity
-            )
+            try:
+                db.save_memory(
+                    memory_id, content, summary, source, activations,
+                    importance, emotional_intensity
+                )
+                success = True
+            except RuntimeError as save_err:
+                logger.error(f"save_to_mind: {save_err}")
+                return [types.TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "success": False,
+                        "error": sanitize_error_message(save_err),
+                    }, indent=2)
+                )]
 
             # Extract PRECOG concepts from first activation if present
             precog_concepts = activations[0].get('precog_concepts', []) if activations else []
@@ -916,8 +1154,16 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
 
         elif name == "query_mind":
             nodes = arguments.get('nodes', [])
-            limit = arguments.get('limit', 20)
-            include_decayed = arguments.get('include_decayed', False)
+            if not isinstance(nodes, list):
+                raise ValueError("nodes must be a list of strings")
+            if len(nodes) > 100:
+                raise ValueError("nodes list exceeds maximum of 100 items")
+            for n in nodes:
+                if not isinstance(n, str):
+                    raise ValueError("each node must be a string")
+            limit = int(_validate_number(
+                arguments.get('limit', 20), 'limit', 1, 500))
+            include_decayed = bool(arguments.get('include_decayed', False))
 
             if not nodes:
                 return [types.TextContent(
@@ -944,8 +1190,10 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
             )]
 
         elif name == "analyze_content":
-            content = arguments['content']
+            content = _validate_string(arguments.get('content', ''), 'content')
             threshold = arguments.get('threshold')
+            if threshold is not None:
+                threshold = _validate_number(threshold, 'threshold', 0.0, 1.0)
 
             activations = db.analyze_content(content, threshold)
 
@@ -972,8 +1220,9 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
             )]
 
         elif name == "get_related_nodes":
-            node_name = arguments['node']
-            min_weight = arguments.get('min_weight', 0.1)
+            node_name = _validate_string(arguments.get('node', ''), 'node', max_length=500)
+            min_weight = _validate_number(
+                arguments.get('min_weight', 0.1), 'min_weight', 0.0, 10.0)
 
             node = db.get_node_by_name(node_name)
             if not node:
@@ -1006,7 +1255,7 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
                 type="text",
                 text=json.dumps({
                     "success": True,
-                    "version": "2.2.0",
+                    "version": "2.3.1",
                     "status": "operational",
                     "statistics": {
                         "node_count": status['node_count'],
@@ -1065,8 +1314,9 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
             )]
 
         elif name == "faiss_search":
-            query = arguments['query']
-            top_k = arguments.get('top_k', 10)
+            query = _validate_string(arguments.get('query', ''), 'query')
+            top_k = int(_validate_number(
+                arguments.get('top_k', 10), 'top_k', 1, 100))
 
             if not tether.is_available():
                 return [types.TextContent(
@@ -1168,7 +1418,7 @@ async def main():
     )
     args = parser.parse_args()
 
-    print("[HEBBIAN-MIND] Hebbian Mind Enterprise v2.2.0 starting", file=sys.stderr)
+    print("[HEBBIAN-MIND] Hebbian Mind Enterprise v2.3.1 starting", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (read): {db.ram_path if db.using_ram else db.disk_path}", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Database (write): {db.disk_path}", file=sys.stderr)
     print(f"[HEBBIAN-MIND] Dual-write: {'ENABLED' if db.disk_conn else 'DISABLED'}", file=sys.stderr)
@@ -1201,5 +1451,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())

@@ -66,3 +66,12 @@ Thumbs.db
 .env.*
 !.env.example
 docker-compose.override.yml
+
+# Release archives
+*.tar
+*.tar.gz
+*.zip
+
+# Windows device name artifacts
+nul
+NUL

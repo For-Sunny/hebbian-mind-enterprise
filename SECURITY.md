@@ -136,8 +136,8 @@ Security patches are released as soon as possible after confirmation. Subscriber
 ## Contact
 
 - **Security Issues**: glass@cipscorps.io
-- **General Support**: contact@cipscorps.com
-- **Documentation**: https://docs.cipscorps.com/hebbian-mind
+- **General Support**: contact@cipscorps.io
+- **Documentation**: https://docs.cipscorps.io/hebbian-mind
 
 ---
 

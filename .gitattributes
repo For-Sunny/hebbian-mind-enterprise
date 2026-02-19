@@ -1,0 +1,14 @@
+# Enforce LF line endings for shell scripts (prevents CRLF issues in Docker/Linux)
+*.sh text eol=lf
+*.py text eol=lf
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env text eol=lf
+*.toml text eol=lf
+*.db binary
+*.tar.gz binary
+*.bin binary

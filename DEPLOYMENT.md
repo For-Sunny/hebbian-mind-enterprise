@@ -403,6 +403,6 @@ sudo ufw deny 9998
 
 For enterprise support:
 
-- Email: contact@cipscorps.com
-- Documentation: https://docs.cipscorps.com/hebbian-mind
+- Email: contact@cipscorps.io
+- Documentation: https://docs.cipscorps.io/hebbian-mind
 - Issues: Enterprise customers receive dedicated support channel

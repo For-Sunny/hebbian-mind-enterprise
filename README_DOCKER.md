@@ -305,7 +305,7 @@ docker run --read-only \
 
 ## Support
 
-- **Documentation**: https://docs.cipscorps.com/hebbian-mind
+- **Documentation**: https://docs.cipscorps.io/hebbian-mind
 - **Email**: glass@cipscorps.io
 - **License**: See LICENSE file
 

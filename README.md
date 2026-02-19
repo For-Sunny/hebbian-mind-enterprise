@@ -127,8 +127,9 @@ Environment variables control behavior. Set them before running, or use `.env` w
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HEBBIAN_MIND_THRESHOLD` | `0.3` | Activation threshold (0.0-1.0) |
-| `HEBBIAN_MIND_EDGE_FACTOR` | `1.0` | Edge strengthening rate |
 | `HEBBIAN_MIND_MAX_WEIGHT` | `10.0` | Maximum edge weight cap |
+
+> **Deprecated:** `HEBBIAN_MIND_EDGE_FACTOR` is no longer used. The asymptotic learning formula (LEARNING_RATE = 0.1) replaced the old harmonic strengthening factor. The env var still loads without error but has no effect on edge weights.
 
 ### Optional Integrations
 
@@ -263,9 +264,11 @@ Decayed memories are hidden from `query_mind` by default. Pass `include_decayed:
 
 ### Dual-Write Pattern
 
-- **Write**: RAM first (speed) -> Disk second (persistence)
+- **Write**: Disk first (crash-safe) -> RAM second (speed)
 - **Read**: RAM (instant) with disk fallback
 - **Startup**: Copies disk to RAM if RAM is empty
+
+Disk commits before RAM updates. If the RAM write fails, the data is already on disk -- the failure gets logged but nothing is lost. This order guarantees durability. A power loss mid-write never leaves you with RAM-only data that never reached disk.
 
 RAM disk is optional. Without it, reads and writes go directly to SQLite on disk.
 
@@ -286,9 +289,17 @@ Nodes have keywords and prototype phrases. Content activates nodes when keywords
 
 When concepts co-activate (appear in the same saved content):
 
-1. Edge created if none exists (weight: 0.15)
-2. Edge strengthened if exists: `weight += factor / (1 + current_weight)`
-3. Weight capped at `MAX_EDGE_WEIGHT`
+1. Edge created if none exists (initial weight: 0.15)
+2. Existing edges strengthen via asymptotic formula:
+
+```
+delta = (MAX_WEIGHT - current_weight) * LEARNING_RATE
+new_weight = current_weight + delta
+```
+
+Each co-activation closes 10% of the gap between current weight and MAX_WEIGHT (10.0). An edge at 2.0 gains 0.8. An edge at 9.0 gains 0.1. Edges approach the ceiling but never hit it -- no saturation, no runaway weights.
+
+Combined with time-based decay (idle edges lose 2% per tick) and homeostatic scaling (total edge weight per node stays near 50.0), the graph self-regulates. Active paths strengthen. Neglected paths fade. The topology stays meaningful.
 
 "Neurons that fire together, wire together."
 
@@ -346,14 +357,27 @@ Check node/edge counts via `mind_status`. Consider increasing `HEBBIAN_MIND_THRE
 
 ## Performance
 
-| Metric | Value |
-|--------|-------|
-| Save latency | <10ms |
-| Query latency | <5ms |
-| RAM disk reads | <1ms |
-| Memory per node | ~1KB |
-| Memory per edge | ~100 bytes |
-| Startup (100 nodes) | <1 second |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Save latency | <10ms | Includes activation, Hebbian strengthening, and commit |
+| Query latency | <5ms | Node lookup + JOIN + sort |
+| RAM disk reads | <1ms | When `HEBBIAN_MIND_RAM_DISK=true` |
+| Analyze latency | <1ms | Content analysis without save |
+| Memory per node | ~1KB | SQLite row with keywords and phrases |
+| Memory per edge | ~100 bytes | SQLite row with weight and timestamps |
+| Startup (100 nodes) | <1 second | Schema creation + node loading + edge initialization |
+
+### Reproducing Benchmarks
+
+A benchmark script is included to verify these claims on your hardware:
+
+```bash
+python benchmarks/benchmark_performance.py
+```
+
+The script creates an isolated temp database, runs 200 iterations of each operation, and reports mean/median/P95/P99 latencies. Results are saved to `benchmarks/latest_results.json` with full system info for reproducibility.
+
+**Test conditions:** Disk-only mode (no RAM disk), WAL journal mode, 20 enterprise nodes, single-threaded. RAM disk mode will produce faster read latencies.
 
 ---
 
@@ -376,22 +400,24 @@ pytest --cov=hebbian_mind
 
 - **Documentation**: [cipscorps.io/docs/hebbian-mind](https://cipscorps.io/docs/hebbian-mind)
 - **Email**: support@cipscorps.io
-- **Issues**: Private repo issue tracker
-
-Enterprise support plans available.
+- **Issues**: [GitHub Issues](https://github.com/For-Sunny/hebbian-mind-enterprise/issues)
 
 ---
 
 ## License
 
-Proprietary software. See [LICENSE](./LICENSE) for terms.
-
-- **Individual**: Single developer, unlimited projects
-- **Team**: Up to 10 developers, single organization
-- **Enterprise**: Unlimited developers, single organization
-
-Redistribution prohibited.
+MIT License. See [LICENSE](./LICENSE) for terms.
 
 ---
 
 *Memory that learns. Concepts that connect. The more you use it, the smarter it gets.*
+
+---
+
+**Made by [CIPS Corp](https://cipscorps.io)**
+
+[Website](https://cipscorps.io) | [Store](https://store.cipscorps.io) | [GitHub](https://github.com/For-Sunny) | glass@cipscorps.io
+
+Enterprise cognitive infrastructure for AI systems: [PyTorch Memory, Soul Matrix, CMM, and the full CIPS Stack](https://store.cipscorps.io).
+
+Copyright (c) 2025-2026 C.I.P.S. LLC

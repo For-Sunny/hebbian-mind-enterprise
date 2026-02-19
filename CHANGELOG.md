@@ -2,6 +2,49 @@
 
 All notable changes to Hebbian Mind Enterprise will be documented in this file.
 
+## [2.3.1] - 2026-02-18
+
+Documentation and contact information fixes applied during three-path verification.
+
+### Fixed
+- **Homeostatic scaling correction** - Post-release patch for edge weight normalization precision applied after 2.3.0 verification
+- **Version strings synchronized** - `pyproject.toml`, `__init__.py`, `server.py`, and `Dockerfile` all updated to 2.3.1
+- **Contact email domain** - `contact@cipscorps.com` corrected to `contact@cipscorps.io` in `pyproject.toml`, `SECURITY.md`, `DEPLOYMENT.md`, `tests/TEST_SUITE_SUMMARY.md`
+- **Documentation URLs** - `docs.cipscorps.com` corrected to `docs.cipscorps.io` in `pyproject.toml`, `SECURITY.md`, `DEPLOYMENT.md`, `README_DOCKER.md`
+- **Homepage URL** - `cipscorps.com` corrected to `cipscorps.io` in `pyproject.toml`
+- **Repository URL** - `github.com/cipscorps/` corrected to `github.com/For-Sunny/` in `pyproject.toml`
+- **CHANGELOG** - Added missing `[2.3.1]` entry (version was bumped in code without updating changelog)
+- **.gitattributes** - Created with LF enforcement for all text file types
+
+---
+
+## [2.3.0] - 2026-02-17
+
+### Fixed
+- **CRITICAL: Edge saturation** - Harmonic formula `delta = 1/(1+w)` drove all edges to MAX_WEIGHT (10.0) after ~76 co-activations. Every edge the same weight means no edge matters. Signal differentiation destroyed.
+  - Replaced with asymptotic formula: `delta = (MAX_WEIGHT - current) * LEARNING_RATE`
+  - Edges approach maximum but never reach it. Weight diversity preserved.
+  - LEARNING_RATE = 0.1 (closes 10% of remaining gap per co-activation)
+
+### Added
+- **Time-based edge decay** - Edges idle >1 hour lose 2% weight per homeostatic tick via `_apply_time_decay()`
+  - New `last_coactivated` column on edges table (schema migration included, idempotent)
+  - Backwards compatible: falls back to `last_strengthened` via COALESCE
+- **Homeostatic scaling** - Per-node weight normalization via `_apply_homeostatic_scaling()`
+  - Target: 50.0 total weight per node
+  - Triggers every 5 co-activations
+  - Prevents runaway weight accumulation on high-activity nodes
+- **Transaction boundary methods** - `_begin`, `_commit`, `_rollback_transaction`
+- **3 database indexes** for query performance:
+  - `idx_edges_target_id` (reverse edge lookups)
+  - `idx_memact_memory_id` (memory activation JOINs)
+  - `idx_memact_node_id` (node activation filters)
+
+### Changed
+- `save_memory()` wrapped in single transaction: 21 separate commits reduced to 2 (1 disk + 1 RAM). ~20x faster.
+- Dual-write order reversed to disk-first, RAM-second for crash safety
+- Edge strengthening uses constant LEARNING_RATE (0.1) instead of dynamic harmonic factor
+
 ## [2.2.0] - 2026-02-09
 
 ### Added

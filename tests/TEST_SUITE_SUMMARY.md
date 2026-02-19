@@ -259,10 +259,8 @@ Potential additions:
 
 ## License
 
-Copyright (c) 2026 CIPS LLC. All rights reserved.
-
-Proprietary software - Hebbian Mind Enterprise Edition.
+Copyright (c) 2025-2026 C.I.P.S. LLC. MIT License.
 
 ---
 
-**For questions or support:** contact@cipscorps.com
+**For questions or support:** contact@cipscorps.io
