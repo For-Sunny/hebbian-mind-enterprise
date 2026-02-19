@@ -6,7 +6,6 @@ Copyright (c) 2026 CIPS LLC
 
 import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -108,10 +107,13 @@ class TestNodeOperations:
     def test_node_unique_constraint(self, populated_db: sqlite3.Connection):
         """Test that duplicate node_id is rejected."""
         with pytest.raises(sqlite3.IntegrityError):
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 INSERT INTO nodes (node_id, name, category, keywords, prototype_phrases)
                 VALUES (?, ?, ?, ?, ?)
-            """, ("node_1", "Duplicate", "test", "[]", "[]"))
+            """,
+                ("node_1", "Duplicate", "test", "[]", "[]"),
+            )
 
 
 class TestEdgeOperations:
@@ -128,15 +130,19 @@ class TestEdgeOperations:
         node2_id = cursor.fetchone()["id"]
 
         # Create edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, co_activation_count)
             VALUES (?, ?, ?, ?)
-        """, (node1_id, node2_id, 0.5, 1))
+        """,
+            (node1_id, node2_id, 0.5, 1),
+        )
         populated_db.commit()
 
         # Verify edge exists
-        cursor.execute("SELECT * FROM edges WHERE source_id = ? AND target_id = ?",
-                      (node1_id, node2_id))
+        cursor.execute(
+            "SELECT * FROM edges WHERE source_id = ? AND target_id = ?", (node1_id, node2_id)
+        )
         edge = cursor.fetchone()
 
         assert edge is not None
@@ -156,18 +162,24 @@ class TestEdgeOperations:
         source_id = min(node1_id, node2_id)
         target_id = max(node1_id, node2_id)
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight)
             VALUES (?, ?, ?)
-        """, (source_id, target_id, 0.5))
+        """,
+            (source_id, target_id, 0.5),
+        )
         populated_db.commit()
 
         # Should find edge regardless of query order
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM edges
             WHERE (source_id = ? AND target_id = ?)
                OR (source_id = ? AND target_id = ?)
-        """, (node1_id, node2_id, node2_id, node1_id))
+        """,
+            (node1_id, node2_id, node2_id, node1_id),
+        )
 
         edge = cursor.fetchone()
         assert edge is not None
@@ -182,18 +194,24 @@ class TestEdgeOperations:
         node2_id = cursor.fetchone()["id"]
 
         # Create first edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight)
             VALUES (?, ?, ?)
-        """, (node1_id, node2_id, 0.5))
+        """,
+            (node1_id, node2_id, 0.5),
+        )
         populated_db.commit()
 
         # Attempt duplicate - should fail
         with pytest.raises(sqlite3.IntegrityError):
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 INSERT INTO edges (source_id, target_id, weight)
                 VALUES (?, ?, ?)
-            """, (node1_id, node2_id, 0.7))
+            """,
+                (node1_id, node2_id, 0.7),
+            )
 
     def test_get_edges_by_weight(self, populated_db: sqlite3.Connection):
         """Test retrieving edges with minimum weight threshold."""
@@ -203,12 +221,18 @@ class TestEdgeOperations:
         cursor.execute("SELECT id FROM nodes ORDER BY id LIMIT 3")
         node_ids = [row["id"] for row in cursor.fetchall()]
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[0], node_ids[1], 0.1))
-        populated_db.execute("""
+        """,
+            (node_ids[0], node_ids[1], 0.1),
+        )
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[1], node_ids[2], 0.5))
+        """,
+            (node_ids[1], node_ids[2], 0.5),
+        )
         populated_db.commit()
 
         # Query edges with min weight 0.3
@@ -228,19 +252,25 @@ class TestEdgeOperations:
         node2_id = cursor.fetchone()["id"]
 
         # Create edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node1_id, node2_id, 0.5))
+        """,
+            (node1_id, node2_id, 0.5),
+        )
         populated_db.commit()
 
         # Find nodes related to node_1
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT n.*, e.weight
             FROM edges e
             JOIN nodes n ON (e.target_id = n.id OR e.source_id = n.id)
             WHERE (e.source_id = ? OR e.target_id = ?)
               AND n.id != ?
-        """, (node1_id, node1_id, node1_id))
+        """,
+            (node1_id, node1_id, node1_id),
+        )
 
         related = cursor.fetchall()
         assert len(related) == 1
@@ -254,12 +284,18 @@ class TestEdgeOperations:
         node_ids = [row["id"] for row in cursor.fetchall()]
 
         # Create edges with different weights
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[0], node_ids[1], 0.3))
-        populated_db.execute("""
+        """,
+            (node_ids[0], node_ids[1], 0.3),
+        )
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[1], node_ids[2], 0.8))
+        """,
+            (node_ids[1], node_ids[2], 0.8),
+        )
         populated_db.commit()
 
         # Get strongest edges
@@ -274,7 +310,7 @@ class TestEdgeOperations:
         # This test verifies the schema is correct
         cursor = populated_db.cursor()
         cursor.execute("PRAGMA foreign_keys")
-        fk_status = cursor.fetchone()
+        cursor.fetchone()
 
         # Note: In production, ensure PRAGMA foreign_keys=ON
         # For test, we just verify the schema has FK constraints
@@ -303,13 +339,16 @@ class TestCategoryEdges:
 
         # Create edges between same-category nodes
         for i, id1 in enumerate(test_nodes):
-            for id2 in test_nodes[i+1:]:
+            for id2 in test_nodes[i + 1 :]:
                 source_id = min(id1, id2)
                 target_id = max(id1, id2)
-                populated_db.execute("""
+                populated_db.execute(
+                    """
                     INSERT OR IGNORE INTO edges (source_id, target_id, weight)
                     VALUES (?, ?, ?)
-                """, (source_id, target_id, 0.1))
+                """,
+                    (source_id, target_id, 0.1),
+                )
 
         populated_db.commit()
 
@@ -337,13 +376,16 @@ class TestCategoryEdges:
         # Create within-category edges
         for cat, node_ids in by_category.items():
             for i, id1 in enumerate(node_ids):
-                for id2 in node_ids[i+1:]:
+                for id2 in node_ids[i + 1 :]:
                     source_id = min(id1, id2)
                     target_id = max(id1, id2)
-                    populated_db.execute("""
+                    populated_db.execute(
+                        """
                         INSERT INTO edges (source_id, target_id, weight)
                         VALUES (?, ?, ?)
-                    """, (source_id, target_id, 0.1))
+                    """,
+                        (source_id, target_id, 0.1),
+                    )
 
         populated_db.commit()
 

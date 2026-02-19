@@ -6,8 +6,6 @@ Ensures internal paths are not leaked to customers in error messages.
 Copyright (c) 2026 CIPS LLC
 """
 
-import pytest
-
 from hebbian_mind.config import sanitize_error_message
 
 

@@ -34,10 +34,13 @@ class TestDiskPersistence:
     def test_disk_read_write(self, test_db: sqlite3.Connection, test_config: dict):
         """Test basic read/write to disk database."""
         # Insert data
-        test_db.execute("""
+        test_db.execute(
+            """
             INSERT INTO nodes (node_id, name, category, keywords, prototype_phrases)
             VALUES (?, ?, ?, ?, ?)
-        """, ("test_1", "Test Node", "test", "[]", "[]"))
+        """,
+            ("test_1", "Test Node", "test", "[]", "[]"),
+        )
         test_db.commit()
 
         # Read data back
@@ -348,7 +351,6 @@ class TestWriteFailureHandling:
         """Test that primary write succeeds even if secondary fails."""
         # Simulate dual-write pattern
         primary_success = False
-        secondary_success = False
 
         # Primary write (RAM)
         try:
@@ -361,7 +363,7 @@ class TestWriteFailureHandling:
         try:
             # Simulate disk write that might fail
             # In test, we just set it to succeed
-            secondary_success = True
+            pass
         except Exception:
             # Failure logged but doesn't prevent primary success
             print("Warning: Secondary write failed")
@@ -420,47 +422,50 @@ class TestNodesFileLoading:
         """Test loading nodes from nodes_v2.json."""
         assert nodes_file.exists()
 
-        with open(nodes_file, 'r', encoding='utf-8') as f:
+        with open(nodes_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        nodes = data.get('nodes', data)
+        nodes = data.get("nodes", data)
         assert isinstance(nodes, list)
         assert len(nodes) > 0
 
     def test_nodes_have_required_fields(self, nodes_file: Path):
         """Test that nodes have all required fields."""
-        with open(nodes_file, 'r', encoding='utf-8') as f:
+        with open(nodes_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        nodes = data.get('nodes', data)
+        nodes = data.get("nodes", data)
 
         for node in nodes:
-            assert 'id' in node or 'node_id' in node
-            assert 'name' in node
-            assert 'category' in node
-            assert 'keywords' in node
-            assert 'prototype_phrases' in node
+            assert "id" in node or "node_id" in node
+            assert "name" in node
+            assert "category" in node
+            assert "keywords" in node
+            assert "prototype_phrases" in node
 
     def test_populate_db_from_nodes_file(self, test_db: sqlite3.Connection, nodes_file: Path):
         """Test populating database from nodes file."""
-        with open(nodes_file, 'r', encoding='utf-8') as f:
+        with open(nodes_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        nodes = data.get('nodes', data)
+        nodes = data.get("nodes", data)
 
         for node in nodes:
-            test_db.execute("""
+            test_db.execute(
+                """
                 INSERT OR IGNORE INTO nodes (node_id, name, category, keywords, prototype_phrases, description, weight)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                node.get('id', node.get('node_id')),
-                node.get('name', ''),
-                node.get('category', ''),
-                json.dumps(node.get('keywords', [])),
-                json.dumps(node.get('prototype_phrases', [])),
-                node.get('description', ''),
-                node.get('weight', 1.0)
-            ))
+            """,
+                (
+                    node.get("id", node.get("node_id")),
+                    node.get("name", ""),
+                    node.get("category", ""),
+                    json.dumps(node.get("keywords", [])),
+                    json.dumps(node.get("prototype_phrases", [])),
+                    node.get("description", ""),
+                    node.get("weight", 1.0),
+                ),
+            )
 
         test_db.commit()
 
@@ -482,10 +487,13 @@ class TestDataIntegrity:
 
         try:
             test_db.execute("BEGIN")
-            test_db.execute("""
+            test_db.execute(
+                """
                 INSERT INTO nodes (node_id, name, category, keywords, prototype_phrases)
                 VALUES (?, ?, ?, ?, ?)
-            """, ("atomic_1", "Test", "test", "[]", "[]"))
+            """,
+                ("atomic_1", "Test", "test", "[]", "[]"),
+            )
 
             # Simulate failure
             raise Exception("Simulated failure")
@@ -506,20 +514,29 @@ class TestDataIntegrity:
         valid_id = cursor.fetchone()["id"]
 
         # Insert valid memory activation
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO memories (memory_id, content, summary)
             VALUES (?, ?, ?)
-        """, ("mem_fk_test", "Test content", "Summary"))
+        """,
+            ("mem_fk_test", "Test content", "Summary"),
+        )
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO memory_activations (memory_id, node_id, activation_score)
             VALUES (?, ?, ?)
-        """, ("mem_fk_test", valid_id, 0.5))
+        """,
+            ("mem_fk_test", valid_id, 0.5),
+        )
 
         populated_db.commit()
 
         # Verify insertion succeeded
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM memory_activations WHERE memory_id = ?
-        """, ("mem_fk_test",))
+        """,
+            ("mem_fk_test",),
+        )
         assert cursor.fetchone() is not None

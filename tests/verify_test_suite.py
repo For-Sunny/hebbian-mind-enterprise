@@ -12,13 +12,13 @@ from pathlib import Path
 def count_test_functions(filepath: Path) -> int:
     """Count test functions in a Python file."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read())
 
         count = 0
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
-                if node.name.startswith('test_'):
+                if node.name.startswith("test_"):
                     count += 1
         return count
     except Exception as e:
@@ -29,13 +29,13 @@ def count_test_functions(filepath: Path) -> int:
 def count_test_classes(filepath: Path) -> int:
     """Count test classes in a Python file."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read())
 
         count = 0
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
-                if node.name.startswith('Test'):
+                if node.name.startswith("Test"):
                     count += 1
         return count
     except Exception as e:
@@ -106,23 +106,23 @@ def main():
     print("\n3. Checking pytest configuration...")
     pytest_ini = tests_dir.parent / "pytest.ini"
     if pytest_ini.exists():
-        print(f"   [OK] pytest.ini present")
+        print("   [OK] pytest.ini present")
     else:
-        print(f"   [MISSING] pytest.ini")
+        print("   [MISSING] pytest.ini")
 
     # Check GitHub Actions workflow
     print("\n4. Checking CI/CD configuration...")
     workflow = tests_dir.parent / ".github" / "workflows" / "tests.yml"
     if workflow.exists():
-        print(f"   [OK] GitHub Actions workflow present")
+        print("   [OK] GitHub Actions workflow present")
     else:
-        print(f"   [MISSING] GitHub Actions workflow")
+        print("   [MISSING] GitHub Actions workflow")
 
     # Count total lines
     print("\n5. Code statistics:")
     total_lines = 0
     for filepath in tests_dir.glob("*.py"):
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             lines = len(f.readlines())
             total_lines += lines
 
@@ -132,16 +132,16 @@ def main():
     print("\n6. Checking conftest.py fixtures...")
     conftest = tests_dir / "conftest.py"
     if conftest.exists():
-        with open(conftest, 'r', encoding='utf-8') as f:
+        with open(conftest, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read())
 
         fixtures = []
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 for decorator in node.decorator_list:
-                    if isinstance(decorator, ast.Name) and decorator.id == 'fixture':
+                    if isinstance(decorator, ast.Name) and decorator.id == "fixture":
                         fixtures.append(node.name)
-                    elif isinstance(decorator, ast.Attribute) and decorator.attr == 'fixture':
+                    elif isinstance(decorator, ast.Attribute) and decorator.attr == "fixture":
                         fixtures.append(node.name)
 
         print(f"   Found {len(fixtures)} fixtures:")
@@ -167,4 +167,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

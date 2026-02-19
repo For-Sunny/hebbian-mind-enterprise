@@ -184,18 +184,21 @@ def test_db(test_config: Dict) -> Generator[sqlite3.Connection, None, None]:
 def populated_db(test_db: sqlite3.Connection, sample_nodes: list) -> sqlite3.Connection:
     """Provide a database populated with test nodes."""
     for node in sample_nodes:
-        test_db.execute("""
+        test_db.execute(
+            """
             INSERT INTO nodes (node_id, name, category, keywords, prototype_phrases, description, weight)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            node["id"],
-            node["name"],
-            node["category"],
-            json.dumps(node["keywords"]),
-            json.dumps(node["prototype_phrases"]),
-            node["description"],
-            node["weight"],
-        ))
+        """,
+            (
+                node["id"],
+                node["name"],
+                node["category"],
+                json.dumps(node["keywords"]),
+                json.dumps(node["prototype_phrases"]),
+                node["description"],
+                node["weight"],
+            ),
+        )
 
     test_db.commit()
     return test_db
@@ -272,15 +275,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "requires_ram: marks tests that require RAM disk"
-    )
-    config.addinivalue_line(
-        "markers", "requires_faiss: marks tests that require FAISS tether"
-    )
-    config.addinivalue_line(
-        "markers", "requires_precog: marks tests that require PRECOG"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line("markers", "requires_ram: marks tests that require RAM disk")
+    config.addinivalue_line("markers", "requires_faiss: marks tests that require FAISS tether")
+    config.addinivalue_line("markers", "requires_precog: marks tests that require PRECOG")

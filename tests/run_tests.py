@@ -16,7 +16,7 @@ def run_command(cmd: list[str], description: str) -> bool:
     print(f"Running: {description}")
     print(f"{'='*60}")
     try:
-        result = subprocess.run(cmd, check=True, capture_output=False)
+        subprocess.run(cmd, check=True, capture_output=False)
         print(f"✓ {description} passed")
         return True
     except subprocess.CalledProcessError as e:
@@ -30,22 +30,20 @@ def main():
     # Change to project root
     project_root = Path(__file__).parent.parent
 
-    print(f"Hebbian Mind Enterprise Test Suite")
+    print("Hebbian Mind Enterprise Test Suite")
     print(f"Project root: {project_root}")
 
     results = []
 
     # 1. Run all tests
-    results.append(run_command(
-        ["pytest", "-v"],
-        "All tests"
-    ))
+    results.append(run_command(["pytest", "-v"], "All tests"))
 
     # 2. Run with coverage
-    results.append(run_command(
-        ["pytest", "--cov=hebbian_mind", "--cov-report=term-missing"],
-        "Tests with coverage"
-    ))
+    results.append(
+        run_command(
+            ["pytest", "--cov=hebbian_mind", "--cov-report=term-missing"], "Tests with coverage"
+        )
+    )
 
     # 3. Run specific test files
     test_files = [
@@ -56,20 +54,14 @@ def main():
     ]
 
     for test_file in test_files:
-        results.append(run_command(
-            ["pytest", "-v", test_file],
-            f"Test file: {test_file}"
-        ))
+        results.append(run_command(["pytest", "-v", test_file], f"Test file: {test_file}"))
 
     # 4. Run only fast tests (exclude slow)
-    results.append(run_command(
-        ["pytest", "-v", "-m", "not slow"],
-        "Fast tests only"
-    ))
+    results.append(run_command(["pytest", "-v", "-m", "not slow"], "Fast tests only"))
 
     # Summary
     print(f"\n{'='*60}")
-    print(f"Test Summary")
+    print("Test Summary")
     print(f"{'='*60}")
     passed = sum(results)
     total = len(results)

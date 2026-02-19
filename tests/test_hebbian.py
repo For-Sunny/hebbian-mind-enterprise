@@ -8,7 +8,6 @@ Copyright (c) 2026 CIPS LLC
 
 import json
 import sqlite3
-from datetime import datetime
 
 import pytest
 
@@ -45,7 +44,7 @@ class TestNodeActivation:
         assert keyword in content_lower
 
         # Word boundary match (should NOT match 'test' in 'testing')
-        word_boundary_match = bool(re.search(r'\b' + re.escape(keyword) + r'\b', content_lower))
+        word_boundary_match = bool(re.search(r"\b" + re.escape(keyword) + r"\b", content_lower))
         assert not word_boundary_match
 
     def test_prototype_phrase_matching(self, populated_db: sqlite3.Connection):
@@ -65,7 +64,6 @@ class TestNodeActivation:
 
     def test_activation_score_calculation(self, populated_db: sqlite3.Connection):
         """Test calculating activation scores based on matches."""
-        content = "This is a test example with sample data"
 
         # Simulate scoring logic
         score = 0.0
@@ -109,16 +107,21 @@ class TestNodeActivation:
         initial_count = node["activation_count"]
 
         # Increment activation count
-        populated_db.execute("""
+        populated_db.execute(
+            """
             UPDATE nodes SET
                 activation_count = activation_count + 1,
                 last_activated = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, (node_id,))
+        """,
+            (node_id,),
+        )
         populated_db.commit()
 
         # Verify increment
-        cursor.execute("SELECT activation_count, last_activated FROM nodes WHERE id = ?", (node_id,))
+        cursor.execute(
+            "SELECT activation_count, last_activated FROM nodes WHERE id = ?", (node_id,)
+        )
         updated = cursor.fetchone()
 
         assert updated["activation_count"] == initial_count + 1
@@ -133,9 +136,12 @@ class TestNodeActivation:
         node_ids = [row["id"] for row in cursor.fetchall()]
 
         for i, node_id in enumerate(node_ids):
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 UPDATE nodes SET activation_count = ? WHERE id = ?
-            """, (i * 10, node_id))
+            """,
+                (i * 10, node_id),
+            )
 
         populated_db.commit()
 
@@ -168,20 +174,25 @@ class TestHebbianStrengthening:
         target_id = max(node1_id, node2_id)
 
         # Check no edge exists
-        cursor.execute("SELECT * FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT * FROM edges WHERE source_id = ? AND target_id = ?", (source_id, target_id)
+        )
         assert cursor.fetchone() is None
 
         # Create edge on first co-activation
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, co_activation_count)
             VALUES (?, ?, ?, ?)
-        """, (source_id, target_id, 0.15, 1))
+        """,
+            (source_id, target_id, 0.15, 1),
+        )
         populated_db.commit()
 
         # Verify edge created
-        cursor.execute("SELECT * FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT * FROM edges WHERE source_id = ? AND target_id = ?", (source_id, target_id)
+        )
         edge = cursor.fetchone()
 
         assert edge is not None
@@ -212,32 +223,40 @@ class TestHebbianStrengthening:
         source_id, target_id = min(node_ids), max(node_ids)
 
         # Create edge with high weight
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, co_activation_count)
             VALUES (?, ?, ?, ?)
-        """, (source_id, target_id, 9.5, 10))
+        """,
+            (source_id, target_id, 9.5, 10),
+        )
         populated_db.commit()
 
         # Strengthen edge
-        cursor.execute("SELECT weight FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT weight FROM edges WHERE source_id = ? AND target_id = ?", (source_id, target_id)
+        )
         current = cursor.fetchone()["weight"]
 
         strengthening = 1 / (1 + current)
         new_weight = min(current + strengthening, 10.0)
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             UPDATE edges SET
                 weight = ?,
                 co_activation_count = co_activation_count + 1,
                 last_strengthened = CURRENT_TIMESTAMP
             WHERE source_id = ? AND target_id = ?
-        """, (new_weight, source_id, target_id))
+        """,
+            (new_weight, source_id, target_id),
+        )
         populated_db.commit()
 
         # Verify weight is capped at 10.0
-        cursor.execute("SELECT weight FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT weight FROM edges WHERE source_id = ? AND target_id = ?", (source_id, target_id)
+        )
         final_weight = cursor.fetchone()["weight"]
 
         assert final_weight <= 10.0
@@ -251,33 +270,43 @@ class TestHebbianStrengthening:
         source_id, target_id = min(node_ids), max(node_ids)
 
         # Create edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, co_activation_count)
             VALUES (?, ?, ?, ?)
-        """, (source_id, target_id, 0.5, 1))
+        """,
+            (source_id, target_id, 0.5, 1),
+        )
         populated_db.commit()
 
         # Strengthen (simulate co-activation)
-        cursor.execute("SELECT weight, co_activation_count FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT weight, co_activation_count FROM edges WHERE source_id = ? AND target_id = ?",
+            (source_id, target_id),
+        )
         edge = cursor.fetchone()
         current_weight = edge["weight"]
         current_count = edge["co_activation_count"]
 
         new_weight = current_weight + (1 / (1 + current_weight))
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             UPDATE edges SET
                 weight = ?,
                 co_activation_count = co_activation_count + 1,
                 last_strengthened = CURRENT_TIMESTAMP
             WHERE source_id = ? AND target_id = ?
-        """, (new_weight, source_id, target_id))
+        """,
+            (new_weight, source_id, target_id),
+        )
         populated_db.commit()
 
         # Verify count incremented
-        cursor.execute("SELECT co_activation_count FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT co_activation_count FROM edges WHERE source_id = ? AND target_id = ?",
+            (source_id, target_id),
+        )
         new_count = cursor.fetchone()["co_activation_count"]
 
         assert new_count == current_count + 1
@@ -293,19 +322,22 @@ class TestHebbianStrengthening:
         # (1,2), (1,3), (2,3)
         pairs = []
         for i, id1 in enumerate(node_ids):
-            for id2 in node_ids[i+1:]:
+            for id2 in node_ids[i + 1 :]:
                 source_id = min(id1, id2)
                 target_id = max(id1, id2)
                 pairs.append((source_id, target_id))
 
                 # Create or strengthen edge
-                populated_db.execute("""
+                populated_db.execute(
+                    """
                     INSERT INTO edges (source_id, target_id, weight, co_activation_count)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(source_id, target_id) DO UPDATE SET
                         weight = weight + (1.0 / (1.0 + weight)),
                         co_activation_count = co_activation_count + 1
-                """, (source_id, target_id, 0.15, 1))
+                """,
+                    (source_id, target_id, 0.15, 1),
+                )
 
         populated_db.commit()
 
@@ -323,12 +355,18 @@ class TestHebbianStrengthening:
         node_ids = [row["id"] for row in cursor.fetchall()]
 
         # Create edges with different weights
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[0], node_ids[1], 0.3))
-        populated_db.execute("""
+        """,
+            (node_ids[0], node_ids[1], 0.3),
+        )
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight) VALUES (?, ?, ?)
-        """, (node_ids[1], node_ids[2], 0.9))
+        """,
+            (node_ids[1], node_ids[2], 0.9),
+        )
         populated_db.commit()
 
         # Query strongest
@@ -353,24 +391,32 @@ class TestHebbianStrengthening:
         source_id, target_id = min(node_ids), max(node_ids)
 
         # Create edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, last_strengthened)
             VALUES (?, ?, ?, ?)
-        """, (source_id, target_id, 0.5, "2020-01-01 00:00:00"))
+        """,
+            (source_id, target_id, 0.5, "2020-01-01 00:00:00"),
+        )
         populated_db.commit()
 
         # Strengthen edge
-        populated_db.execute("""
+        populated_db.execute(
+            """
             UPDATE edges SET
                 weight = weight + 0.1,
                 last_strengthened = CURRENT_TIMESTAMP
             WHERE source_id = ? AND target_id = ?
-        """, (source_id, target_id))
+        """,
+            (source_id, target_id),
+        )
         populated_db.commit()
 
         # Verify timestamp updated
-        cursor.execute("SELECT last_strengthened FROM edges WHERE source_id = ? AND target_id = ?",
-                      (source_id, target_id))
+        cursor.execute(
+            "SELECT last_strengthened FROM edges WHERE source_id = ? AND target_id = ?",
+            (source_id, target_id),
+        )
         timestamp = cursor.fetchone()["last_strengthened"]
 
         assert timestamp != "2020-01-01 00:00:00"
@@ -385,27 +431,36 @@ class TestMemoryActivations:
 
         # Create a test memory
         memory_id = "test_memory_001"
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO memories (memory_id, content, summary, source)
             VALUES (?, ?, ?, ?)
-        """, (memory_id, "Test content", "Test summary", "TEST"))
+        """,
+            (memory_id, "Test content", "Test summary", "TEST"),
+        )
         populated_db.commit()
 
         # Record activations
         cursor.execute("SELECT id FROM nodes WHERE node_id = ?", ("node_1",))
         node_id = cursor.fetchone()["id"]
 
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO memory_activations (memory_id, node_id, activation_score)
             VALUES (?, ?, ?)
-        """, (memory_id, node_id, 0.75))
+        """,
+            (memory_id, node_id, 0.75),
+        )
         populated_db.commit()
 
         # Verify activation recorded
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM memory_activations
             WHERE memory_id = ? AND node_id = ?
-        """, (memory_id, node_id))
+        """,
+            (memory_id, node_id),
+        )
         activation = cursor.fetchone()
 
         assert activation is not None
@@ -418,30 +473,39 @@ class TestMemoryActivations:
         # Create memories
         memory_ids = ["mem_001", "mem_002"]
         for mem_id in memory_ids:
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 INSERT INTO memories (memory_id, content, summary)
                 VALUES (?, ?, ?)
-            """, (mem_id, f"Content {mem_id}", f"Summary {mem_id}"))
+            """,
+                (mem_id, f"Content {mem_id}", f"Summary {mem_id}"),
+            )
 
         cursor.execute("SELECT id FROM nodes WHERE node_id = ?", ("node_1",))
         node_id = cursor.fetchone()["id"]
 
         # Record activations
         for mem_id in memory_ids:
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 INSERT INTO memory_activations (memory_id, node_id, activation_score)
                 VALUES (?, ?, ?)
-            """, (mem_id, node_id, 0.5))
+            """,
+                (mem_id, node_id, 0.5),
+            )
 
         populated_db.commit()
 
         # Query memories by node
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT DISTINCT m.*
             FROM memories m
             JOIN memory_activations ma ON m.memory_id = ma.memory_id
             WHERE ma.node_id = ?
-        """, (node_id,))
+        """,
+            (node_id,),
+        )
 
         memories = cursor.fetchall()
         assert len(memories) == 2
@@ -452,10 +516,13 @@ class TestMemoryActivations:
 
         # Create memory
         memory_id = "mem_001"
-        populated_db.execute("""
+        populated_db.execute(
+            """
             INSERT INTO memories (memory_id, content, summary)
             VALUES (?, ?, ?)
-        """, (memory_id, "Test content", "Summary"))
+        """,
+            (memory_id, "Test content", "Summary"),
+        )
 
         # Record multiple node activations
         cursor.execute("SELECT id FROM nodes")
@@ -463,15 +530,19 @@ class TestMemoryActivations:
 
         scores = [0.5, 0.7, 0.3]
         for node_id, score in zip(node_ids, scores):
-            populated_db.execute("""
+            populated_db.execute(
+                """
                 INSERT INTO memory_activations (memory_id, node_id, activation_score)
                 VALUES (?, ?, ?)
-            """, (memory_id, node_id, score))
+            """,
+                (memory_id, node_id, score),
+            )
 
         populated_db.commit()
 
         # Query with aggregated activations
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT m.*,
                    GROUP_CONCAT(n.name || ':' || ma.activation_score) as activations
             FROM memories m
@@ -479,7 +550,9 @@ class TestMemoryActivations:
             JOIN nodes n ON ma.node_id = n.id
             WHERE m.memory_id = ?
             GROUP BY m.id
-        """, (memory_id,))
+        """,
+            (memory_id,),
+        )
 
         result = cursor.fetchone()
         assert result is not None

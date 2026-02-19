@@ -18,13 +18,12 @@ Covers:
 Copyright (c) 2026 CIPS LLC
 """
 
-import json
 import math
 import sqlite3
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -34,10 +33,10 @@ from hebbian_mind.decay import (
     calculate_effective_importance,
 )
 
-
 # ============================================================
 # Decay config fixture
 # ============================================================
+
 
 @pytest.fixture
 def decay_config():
@@ -72,6 +71,7 @@ def decay_config_disabled():
 # ============================================================
 # Database fixtures
 # ============================================================
+
 
 @pytest.fixture
 def temp_db():
@@ -199,6 +199,7 @@ def mock_db_dual_write(temp_db):
 # Test: Memory decay formula
 # ============================================================
 
+
 class TestMemoryDecayFormula:
     """Test calculate_effective_importance math."""
 
@@ -298,6 +299,7 @@ class TestMemoryDecayFormula:
 # Test: Edge decay formula
 # ============================================================
 
+
 class TestEdgeDecayFormula:
     """Test calculate_edge_decay math."""
 
@@ -393,6 +395,7 @@ class TestEdgeDecayFormula:
 # Test: Schema migration
 # ============================================================
 
+
 class TestSchemaMigration:
     """Test that decay columns are added correctly."""
 
@@ -452,6 +455,7 @@ class TestSchemaMigration:
 # Test: Save with decay fields
 # ============================================================
 
+
 class TestSaveWithDecay:
     """Test that save_memory sets decay fields."""
 
@@ -459,12 +463,15 @@ class TestSaveWithDecay:
         """New memories should have decay fields populated."""
         now = time.time()
 
-        temp_db.execute("""
+        temp_db.execute(
+            """
             INSERT INTO memories
             (memory_id, content, summary, source, importance, emotional_intensity,
              last_accessed, effective_importance, access_count)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        """, ("test_1", "test content", "summary", "TEST", 0.7, 0.5, now, 0.7))
+        """,
+            ("test_1", "test content", "summary", "TEST", 0.7, 0.5, now, 0.7),
+        )
         temp_db.commit()
 
         cursor = temp_db.cursor()
@@ -479,11 +486,14 @@ class TestSaveWithDecay:
         """Immortal memory should have effective_importance = importance."""
         now = time.time()
 
-        temp_db.execute("""
+        temp_db.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES (?, ?, ?, ?, ?, 0)
-        """, ("immortal_1", "critical memory", 0.95, now, 0.95))
+        """,
+            ("immortal_1", "critical memory", 0.95, now, 0.95),
+        )
         temp_db.commit()
 
         cursor = temp_db.cursor()
@@ -497,6 +507,7 @@ class TestSaveWithDecay:
 # ============================================================
 # Test: Query with decay filtering
 # ============================================================
+
 
 class TestQueryDecayFiltering:
     """Test that queries filter by effective_importance."""
@@ -515,25 +526,34 @@ class TestQueryDecayFiltering:
         now = time.time()
 
         # Active memory (above threshold)
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('active_1', 'active content', 0.5, ?, 0.45, 1)
-        """, (now,))
+        """,
+            (now,),
+        )
 
         # Decayed memory (below threshold)
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('decayed_1', 'decayed content', 0.3, ?, 0.05, 0)
-        """, (now - 365 * 86400,))
+        """,
+            (now - 365 * 86400,),
+        )
 
         # Immortal memory
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('immortal_1', 'immortal content', 0.95, ?, 0.95, 5)
-        """, (now,))
+        """,
+            (now,),
+        )
 
         # Memory with NULL effective_importance (pre-migration)
         conn.execute("""
@@ -543,11 +563,14 @@ class TestQueryDecayFiltering:
         """)
 
         # Link all to the node
-        for mid in ['active_1', 'decayed_1', 'immortal_1', 'null_1']:
-            conn.execute("""
+        for mid in ["active_1", "decayed_1", "immortal_1", "null_1"]:
+            conn.execute(
+                """
                 INSERT INTO memory_activations (memory_id, node_id, activation_score)
                 VALUES (?, ?, 0.5)
-            """, (mid, node_id))
+            """,
+                (mid, node_id),
+            )
 
         conn.commit()
         return node_id
@@ -558,20 +581,23 @@ class TestQueryDecayFiltering:
 
         threshold = 0.1
         cursor = temp_db.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT DISTINCT m.*
             FROM memories m
             JOIN memory_activations ma ON m.memory_id = ma.memory_id
             WHERE (m.effective_importance IS NULL OR m.effective_importance >= ?)
-        """, (threshold,))
+        """,
+            (threshold,),
+        )
 
         results = [dict(r) for r in cursor.fetchall()]
-        memory_ids = [r['memory_id'] for r in results]
+        memory_ids = [r["memory_id"] for r in results]
 
-        assert 'active_1' in memory_ids
-        assert 'immortal_1' in memory_ids
-        assert 'null_1' in memory_ids  # NULL treated as not-decayed
-        assert 'decayed_1' not in memory_ids
+        assert "active_1" in memory_ids
+        assert "immortal_1" in memory_ids
+        assert "null_1" in memory_ids  # NULL treated as not-decayed
+        assert "decayed_1" not in memory_ids
 
     def test_query_shows_all_with_include_decayed(self, temp_db):
         """All memories should appear when include_decayed=True."""
@@ -585,17 +611,18 @@ class TestQueryDecayFiltering:
         """)
 
         results = [dict(r) for r in cursor.fetchall()]
-        memory_ids = [r['memory_id'] for r in results]
+        memory_ids = [r["memory_id"] for r in results]
 
-        assert 'active_1' in memory_ids
-        assert 'immortal_1' in memory_ids
-        assert 'decayed_1' in memory_ids
-        assert 'null_1' in memory_ids
+        assert "active_1" in memory_ids
+        assert "immortal_1" in memory_ids
+        assert "decayed_1" in memory_ids
+        assert "null_1" in memory_ids
 
 
 # ============================================================
 # Test: Touch on access
 # ============================================================
+
 
 class TestTouchOnAccess:
     """Test that accessed memories get their timestamps refreshed."""
@@ -605,42 +632,50 @@ class TestTouchOnAccess:
         conn = mock_db.read_conn
         old_time = time.time() - 86400  # yesterday
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('touch_1', 'content', 0.5, ?, 0.5, 0)
-        """, (old_time,))
+        """,
+            (old_time,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
-        engine.touch_memories(['touch_1'])
+        engine.touch_memories(["touch_1"])
 
         cursor = conn.cursor()
-        cursor.execute("SELECT last_accessed, access_count FROM memories WHERE memory_id = 'touch_1'")
+        cursor.execute(
+            "SELECT last_accessed, access_count FROM memories WHERE memory_id = 'touch_1'"
+        )
         row = dict(cursor.fetchone())
 
-        assert row['last_accessed'] > old_time
-        assert row['access_count'] == 1
+        assert row["last_accessed"] > old_time
+        assert row["access_count"] == 1
 
     def test_touch_increments_access_count(self, mock_db, decay_config):
         """Multiple touches should increment access_count."""
         conn = mock_db.read_conn
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('touch_2', 'content', 0.5, ?, 0.5, 3)
-        """, (time.time(),))
+        """,
+            (time.time(),),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
-        engine.touch_memories(['touch_2'])
+        engine.touch_memories(["touch_2"])
 
         cursor = conn.cursor()
         cursor.execute("SELECT access_count FROM memories WHERE memory_id = 'touch_2'")
         row = cursor.fetchone()
 
-        assert row['access_count'] == 4
+        assert row["access_count"] == 4
 
     def test_touch_empty_list(self, mock_db, decay_config):
         """Touching empty list should not error."""
@@ -650,12 +685,13 @@ class TestTouchOnAccess:
     def test_touch_nonexistent_memory(self, mock_db, decay_config):
         """Touching nonexistent memory should not error."""
         engine = HebbianDecayEngine(mock_db, decay_config)
-        engine.touch_memories(['nonexistent'])  # Should not raise
+        engine.touch_memories(["nonexistent"])  # Should not raise
 
 
 # ============================================================
 # Test: Memory sweep
 # ============================================================
+
 
 class TestMemorySweep:
     """Test memory decay sweep."""
@@ -665,35 +701,39 @@ class TestMemorySweep:
         conn = mock_db.read_conn
         old_time = time.time() - (60 * 86400)  # 60 days ago
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('sweep_1', 'content', 0.5, ?, 0.5, 0)
-        """, (old_time,))
+        """,
+            (old_time,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.run_sweep()
 
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT effective_importance FROM memories WHERE memory_id = 'sweep_1'"
-        )
-        new_eff = cursor.fetchone()['effective_importance']
+        cursor.execute("SELECT effective_importance FROM memories WHERE memory_id = 'sweep_1'")
+        new_eff = cursor.fetchone()["effective_importance"]
 
         assert new_eff < 0.5
-        assert stats['memories_swept'] >= 1
+        assert stats["memories_swept"] >= 1
 
     def test_sweep_skips_immortal(self, mock_db, decay_config):
         """Immortal memories should be counted but not decayed."""
         conn = mock_db.read_conn
         old_time = time.time() - (365 * 86400)
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('immortal_sweep', 'content', 0.95, ?, 0.95, 0)
-        """, (old_time,))
+        """,
+            (old_time,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
@@ -703,55 +743,60 @@ class TestMemorySweep:
         cursor.execute(
             "SELECT effective_importance FROM memories WHERE memory_id = 'immortal_sweep'"
         )
-        eff = cursor.fetchone()['effective_importance']
+        eff = cursor.fetchone()["effective_importance"]
 
         assert eff == 0.95  # Unchanged
-        assert stats['memories_immortal'] >= 1
+        assert stats["memories_immortal"] >= 1
 
     def test_sweep_counts_decayed(self, mock_db, decay_config):
         """Sweep should count how many fell below threshold."""
         conn = mock_db.read_conn
         very_old = time.time() - (365 * 86400)
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('decay_count', 'content', 0.2, ?, 0.2, 0)
-        """, (very_old,))
+        """,
+            (very_old,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.run_sweep()
 
-        assert stats['memories_decayed'] >= 1
+        assert stats["memories_decayed"] >= 1
 
     def test_sweep_disabled(self, mock_db, decay_config_disabled):
         """Sweep should do nothing when decay is disabled."""
         conn = mock_db.read_conn
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories
             (memory_id, content, importance, last_accessed, effective_importance, access_count)
             VALUES ('no_sweep', 'content', 0.5, ?, 0.5, 0)
-        """, (time.time() - 86400 * 100,))
+        """,
+            (time.time() - 86400 * 100,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config_disabled)
         stats = engine.run_sweep()
 
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT effective_importance FROM memories WHERE memory_id = 'no_sweep'"
-        )
-        eff = cursor.fetchone()['effective_importance']
+        cursor.execute("SELECT effective_importance FROM memories WHERE memory_id = 'no_sweep'")
+        eff = cursor.fetchone()["effective_importance"]
 
         assert eff == 0.5  # Unchanged
-        assert stats['memories_swept'] == 0
+        assert stats["memories_swept"] == 0
 
 
 # ============================================================
 # Test: Edge sweep
 # ============================================================
+
 
 class TestEdgeSweep:
     """Test edge weight decay sweep."""
@@ -773,10 +818,13 @@ class TestEdgeSweep:
 
         # Insert a strong edge that was strengthened 60 days ago
         old_time = "2025-12-11 12:00:00"  # Well in the past
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO edges (source_id, target_id, weight, co_activation_count, last_strengthened)
             VALUES (1, 2, 5.0, 10, ?)
-        """, (old_time,))
+        """,
+            (old_time,),
+        )
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
@@ -784,11 +832,11 @@ class TestEdgeSweep:
 
         cursor = conn.cursor()
         cursor.execute("SELECT weight FROM edges WHERE source_id = 1 AND target_id = 2")
-        new_weight = cursor.fetchone()['weight']
+        new_weight = cursor.fetchone()["weight"]
 
         assert new_weight < 5.0
         assert new_weight >= 0.1
-        assert stats['edges_swept'] >= 1
+        assert stats["edges_swept"] >= 1
 
     def test_sweep_respects_min_weight(self, mock_db, decay_config):
         """Edge decay should never go below min_weight."""
@@ -816,7 +864,7 @@ class TestEdgeSweep:
 
         cursor = conn.cursor()
         cursor.execute("SELECT weight FROM edges WHERE source_id = 1 AND target_id = 2")
-        weight = cursor.fetchone()['weight']
+        weight = cursor.fetchone()["weight"]
 
         assert weight >= 0.1  # Never below min
 
@@ -843,7 +891,7 @@ class TestEdgeSweep:
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.run_sweep()
 
-        assert stats['edges_swept'] == 0  # Skipped entirely
+        assert stats["edges_swept"] == 0  # Skipped entirely
 
     def test_edge_sweep_disabled(self, mock_db, decay_config_disabled):
         """Edge sweep should do nothing when disabled."""
@@ -870,15 +918,16 @@ class TestEdgeSweep:
 
         cursor = conn.cursor()
         cursor.execute("SELECT weight FROM edges WHERE source_id = 1 AND target_id = 2")
-        weight = cursor.fetchone()['weight']
+        weight = cursor.fetchone()["weight"]
 
         assert weight == 5.0  # Unchanged
-        assert stats['edges_swept'] == 0
+        assert stats["edges_swept"] == 0
 
 
 # ============================================================
 # Test: Dual-write sweep
 # ============================================================
+
 
 class TestDualWriteSweep:
     """Test that sweeps write to both RAM and disk connections."""
@@ -891,11 +940,14 @@ class TestDualWriteSweep:
 
         # Insert same memory in both
         for conn in [ram_conn, disk_conn]:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO memories
                 (memory_id, content, importance, last_accessed, effective_importance, access_count)
                 VALUES ('dual_1', 'content', 0.5, ?, 0.5, 0)
-            """, (old_time,))
+            """,
+                (old_time,),
+            )
             conn.commit()
 
         engine = HebbianDecayEngine(mock_db_dual_write, decay_config)
@@ -904,10 +956,8 @@ class TestDualWriteSweep:
         # Both should be updated
         for conn in [ram_conn, disk_conn]:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT effective_importance FROM memories WHERE memory_id = 'dual_1'"
-            )
-            eff = cursor.fetchone()['effective_importance']
+            cursor.execute("SELECT effective_importance FROM memories WHERE memory_id = 'dual_1'")
+            eff = cursor.fetchone()["effective_importance"]
             assert eff < 0.5
 
     def test_touch_dual_write(self, mock_db_dual_write, decay_config):
@@ -917,15 +967,18 @@ class TestDualWriteSweep:
         old_time = time.time() - 86400
 
         for conn in [ram_conn, disk_conn]:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO memories
                 (memory_id, content, importance, last_accessed, effective_importance, access_count)
                 VALUES ('touch_dual', 'content', 0.5, ?, 0.5, 0)
-            """, (old_time,))
+            """,
+                (old_time,),
+            )
             conn.commit()
 
         engine = HebbianDecayEngine(mock_db_dual_write, decay_config)
-        engine.touch_memories(['touch_dual'])
+        engine.touch_memories(["touch_dual"])
 
         for conn in [ram_conn, disk_conn]:
             cursor = conn.cursor()
@@ -933,13 +986,14 @@ class TestDualWriteSweep:
                 "SELECT last_accessed, access_count FROM memories WHERE memory_id = 'touch_dual'"
             )
             row = dict(cursor.fetchone())
-            assert row['last_accessed'] > old_time
-            assert row['access_count'] == 1
+            assert row["last_accessed"] > old_time
+            assert row["access_count"] == 1
 
 
 # ============================================================
 # Test: DecayEngine lifecycle
 # ============================================================
+
 
 class TestDecayEngineLifecycle:
     """Test start/stop/status of the decay engine."""
@@ -987,6 +1041,7 @@ class TestDecayEngineLifecycle:
 # Test: Status and stats
 # ============================================================
 
+
 class TestStatusAndStats:
     """Test get_status and get_decay_stats."""
 
@@ -995,11 +1050,11 @@ class TestStatusAndStats:
         engine = HebbianDecayEngine(mock_db, decay_config)
         status = engine.get_status()
 
-        assert status['memory_decay_enabled'] is True
-        assert status['edge_decay_enabled'] is True
-        assert status['running'] is False
-        assert status['sweep_count'] == 0
-        assert 'config' in status
+        assert status["memory_decay_enabled"] is True
+        assert status["edge_decay_enabled"] is True
+        assert status["running"] is False
+        assert status["sweep_count"] == 0
+        assert "config" in status
 
     def test_get_status_after_sweep(self, mock_db, decay_config):
         """Status should reflect sweep history."""
@@ -1007,19 +1062,19 @@ class TestStatusAndStats:
         engine.run_sweep()
 
         status = engine.get_status()
-        assert status['sweep_count'] == 1
-        assert status['last_sweep_time'] is not None
+        assert status["sweep_count"] == 1
+        assert status["last_sweep_time"] is not None
 
     def test_get_decay_stats_empty_db(self, mock_db, decay_config):
         """Stats on empty database should return zeros."""
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.get_decay_stats()
 
-        assert stats['memories']['total'] == 0
-        assert stats['memories']['immortal'] == 0
-        assert stats['memories']['active'] == 0
-        assert stats['memories']['decayed'] == 0
-        assert stats['edges']['total'] == 0
+        assert stats["memories"]["total"] == 0
+        assert stats["memories"]["immortal"] == 0
+        assert stats["memories"]["active"] == 0
+        assert stats["memories"]["decayed"] == 0
+        assert stats["edges"]["total"] == 0
 
     def test_get_decay_stats_with_data(self, mock_db, decay_config):
         """Stats should count memory categories correctly."""
@@ -1027,32 +1082,41 @@ class TestStatusAndStats:
         now = time.time()
 
         # Immortal
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories (memory_id, content, importance, last_accessed, effective_importance)
             VALUES ('s_immortal', 'content', 0.95, ?, 0.95)
-        """, (now,))
+        """,
+            (now,),
+        )
 
         # Active
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories (memory_id, content, importance, last_accessed, effective_importance)
             VALUES ('s_active', 'content', 0.5, ?, 0.45)
-        """, (now,))
+        """,
+            (now,),
+        )
 
         # Decayed
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO memories (memory_id, content, importance, last_accessed, effective_importance)
             VALUES ('s_decayed', 'content', 0.3, ?, 0.05)
-        """, (now - 365 * 86400,))
+        """,
+            (now - 365 * 86400,),
+        )
 
         conn.commit()
 
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.get_decay_stats()
 
-        assert stats['memories']['total'] == 3
-        assert stats['memories']['immortal'] == 1
-        assert stats['memories']['active'] == 1
-        assert stats['memories']['decayed'] == 1
+        assert stats["memories"]["total"] == 3
+        assert stats["memories"]["immortal"] == 1
+        assert stats["memories"]["active"] == 1
+        assert stats["memories"]["decayed"] == 1
 
     def test_get_decay_stats_edges(self, mock_db, decay_config):
         """Stats should report edge weight distribution."""
@@ -1086,15 +1150,16 @@ class TestStatusAndStats:
         engine = HebbianDecayEngine(mock_db, decay_config)
         stats = engine.get_decay_stats()
 
-        assert stats['edges']['total'] == 2
-        assert stats['edges']['at_minimum_weight'] == 1
-        assert stats['edges']['above_minimum'] == 1
-        assert stats['edges']['average_weight'] > 0
+        assert stats["edges"]["total"] == 2
+        assert stats["edges"]["at_minimum_weight"] == 1
+        assert stats["edges"]["above_minimum"] == 1
+        assert stats["edges"]["average_weight"] > 0
 
 
 # ============================================================
 # Test: Config integration
 # ============================================================
+
 
 class TestConfigIntegration:
     """Test Config class decay additions."""
@@ -1105,14 +1170,14 @@ class TestConfigIntegration:
 
         config = Config.get_decay_config()
 
-        assert 'enabled' in config
-        assert 'base_rate' in config
-        assert 'threshold' in config
-        assert 'immortal_threshold' in config
-        assert 'sweep_interval_minutes' in config
-        assert 'edge_decay_enabled' in config
-        assert 'edge_decay_rate' in config
-        assert 'edge_decay_min_weight' in config
+        assert "enabled" in config
+        assert "base_rate" in config
+        assert "threshold" in config
+        assert "immortal_threshold" in config
+        assert "sweep_interval_minutes" in config
+        assert "edge_decay_enabled" in config
+        assert "edge_decay_rate" in config
+        assert "edge_decay_min_weight" in config
 
     def test_decay_in_summary(self):
         """Config.summary() should include decay section."""
@@ -1120,16 +1185,17 @@ class TestConfigIntegration:
 
         summary = Config.summary()
 
-        assert 'decay' in summary
-        assert summary['decay']['enabled'] is True
-        assert summary['decay']['base_rate'] == 0.01
+        assert "decay" in summary
+        assert summary["decay"]["enabled"] is True
+        assert summary["decay"]["base_rate"] == 0.01
 
     def test_config_env_override(self):
         """Decay config should respect environment variables."""
         import os
-        os.environ['HEBBIAN_MIND_DECAY_ENABLED'] = 'false'
-        os.environ['HEBBIAN_MIND_DECAY_BASE_RATE'] = '0.05'
-        os.environ['HEBBIAN_MIND_EDGE_DECAY_RATE'] = '0.02'
+
+        os.environ["HEBBIAN_MIND_DECAY_ENABLED"] = "false"
+        os.environ["HEBBIAN_MIND_DECAY_BASE_RATE"] = "0.05"
+        os.environ["HEBBIAN_MIND_EDGE_DECAY_RATE"] = "0.02"
 
         # Need to reimport to pick up env changes
         # Since Config uses class-level attributes evaluated at import,
@@ -1139,14 +1205,15 @@ class TestConfigIntegration:
         assert float(os.getenv("HEBBIAN_MIND_EDGE_DECAY_RATE")) == 0.02
 
         # Cleanup
-        del os.environ['HEBBIAN_MIND_DECAY_ENABLED']
-        del os.environ['HEBBIAN_MIND_DECAY_BASE_RATE']
-        del os.environ['HEBBIAN_MIND_EDGE_DECAY_RATE']
+        del os.environ["HEBBIAN_MIND_DECAY_ENABLED"]
+        del os.environ["HEBBIAN_MIND_DECAY_BASE_RATE"]
+        del os.environ["HEBBIAN_MIND_EDGE_DECAY_RATE"]
 
 
 # ============================================================
 # Test: Timestamp parsing
 # ============================================================
+
 
 class TestTimestampParsing:
     """Test the decay engine's timestamp parser."""
