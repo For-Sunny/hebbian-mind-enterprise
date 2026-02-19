@@ -301,11 +301,14 @@ class HebbianDecayEngine:
         min_weight = self.config["edge_decay_min_weight"]
 
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT id, source_id, target_id, weight, last_strengthened
             FROM edges
             WHERE weight > ? AND last_strengthened IS NOT NULL
-        """, (min_weight,))
+        """,
+            (min_weight,),
+        )
         rows = cursor.fetchall()
 
         for row in rows:
@@ -381,6 +384,7 @@ class HebbianDecayEngine:
 
         # Try SQLite CURRENT_TIMESTAMP format: "YYYY-MM-DD HH:MM:SS"
         from datetime import datetime
+
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
             try:
                 dt = datetime.strptime(ts_str, fmt)

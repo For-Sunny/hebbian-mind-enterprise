@@ -30,22 +30,20 @@ def sanitize_error_message(error: Exception) -> str:
     # Patterns to scrub (order matters - more specific first)
     patterns = [
         # Windows paths
-        (r'[A-Za-z]:\\Users\\[^\\]+\\', ''),           # C:\Users\username\
-        (r'[A-Za-z]:\\[Pp]rogram [Ff]iles[^\\]*\\', ''),  # C:\Program Files\
-        (r'[A-Za-z]:\\[Ww]indows\\', ''),              # C:\Windows\
-        (r'[A-Za-z]:\\[^\\]+\\', ''),                  # Any other drive root
-
+        (r"[A-Za-z]:\\Users\\[^\\]+\\", ""),  # C:\Users\username\
+        (r"[A-Za-z]:\\[Pp]rogram [Ff]iles[^\\]*\\", ""),  # C:\Program Files\
+        (r"[A-Za-z]:\\[Ww]indows\\", ""),  # C:\Windows\
+        (r"[A-Za-z]:\\[^\\]+\\", ""),  # Any other drive root
         # Linux/Unix paths
-        (r'/home/[^/]+/', ''),                         # /home/username/
-        (r'/app/', ''),                                # Docker /app/
-        (r'/opt/[^/]+/', ''),                          # /opt/package/
-        (r'/usr/local/', ''),                          # /usr/local/
-        (r'/var/[^/]+/', ''),                          # /var/lib/, /var/log/, etc
-        (r'/tmp/', ''),                                # /tmp/
-
+        (r"/home/[^/]+/", ""),  # /home/username/
+        (r"/app/", ""),  # Docker /app/
+        (r"/opt/[^/]+/", ""),  # /opt/package/
+        (r"/usr/local/", ""),  # /usr/local/
+        (r"/var/[^/]+/", ""),  # /var/lib/, /var/log/, etc
+        (r"/tmp/", ""),  # /tmp/
         # Generic patterns (fallback)
-        (r'File "[^"]+",', 'File "<path>",'),          # Python traceback file references
-        (r"File '[^']+',", "File '<path>',"),          # Python traceback file references (single quotes)
+        (r'File "[^"]+",', 'File "<path>",'),  # Python traceback file references
+        (r"File '[^']+',", "File '<path>',"),  # Python traceback file references (single quotes)
     ]
 
     for pattern, replacement in patterns:
@@ -56,13 +54,13 @@ def sanitize_error_message(error: Exception) -> str:
 
 def _get_default_ram_dir() -> Optional[Path]:
     """Get platform-appropriate RAM disk default.
-    
+
     Returns:
         Path to RAM disk directory on Linux (if /dev/shm exists),
         None on Windows and macOS (require explicit configuration).
     """
     system = platform.system()
-    
+
     if system == "Linux" and Path("/dev/shm").exists():
         return Path("/dev/shm/hebbian_mind")
     # Windows and macOS require explicit configuration via HEBBIAN_MIND_RAM_DIR
@@ -83,17 +81,18 @@ class Config:
     # RAM disk paths (optional high-performance layer)
     RAM_DISK_ENABLED: bool = os.getenv("HEBBIAN_MIND_RAM_DISK", "false").lower() == "true"
     RAM_DATA_DIR: Optional[Path] = (
-        Path(os.getenv("HEBBIAN_MIND_RAM_DIR")) if os.getenv("HEBBIAN_MIND_RAM_DIR")
-        else _get_default_ram_dir()
-    ) if RAM_DISK_ENABLED else None
-    RAM_DB_PATH: Optional[Path] = (
-        RAM_DATA_DIR / "hebbian_mind.db" if RAM_DATA_DIR else None
+        (
+            Path(os.getenv("HEBBIAN_MIND_RAM_DIR"))
+            if os.getenv("HEBBIAN_MIND_RAM_DIR")
+            else _get_default_ram_dir()
+        )
+        if RAM_DISK_ENABLED
+        else None
     )
+    RAM_DB_PATH: Optional[Path] = RAM_DATA_DIR / "hebbian_mind.db" if RAM_DATA_DIR else None
 
     # FAISS tether integration (optional)
-    FAISS_TETHER_ENABLED: bool = (
-        os.getenv("HEBBIAN_MIND_FAISS_ENABLED", "false").lower() == "true"
-    )
+    FAISS_TETHER_ENABLED: bool = os.getenv("HEBBIAN_MIND_FAISS_ENABLED", "false").lower() == "true"
     FAISS_TETHER_HOST: str = os.getenv("HEBBIAN_MIND_FAISS_HOST", "localhost")
     FAISS_TETHER_PORT: int = int(os.getenv("HEBBIAN_MIND_FAISS_PORT", "9998"))
 
@@ -107,33 +106,30 @@ class Config:
 
     # Hebbian learning parameters
     ACTIVATION_THRESHOLD: float = float(os.getenv("HEBBIAN_MIND_THRESHOLD", "0.3"))
-    EDGE_STRENGTHENING_FACTOR: float = float(
-        os.getenv("HEBBIAN_MIND_EDGE_FACTOR", "1.0")
-    )
+    EDGE_STRENGTHENING_FACTOR: float = float(os.getenv("HEBBIAN_MIND_EDGE_FACTOR", "1.0"))
     MAX_EDGE_WEIGHT: float = float(os.getenv("HEBBIAN_MIND_MAX_WEIGHT", "10.0"))
 
     # Memory decay parameters
-    DECAY_ENABLED: bool = (
-        os.getenv("HEBBIAN_MIND_DECAY_ENABLED", "true").lower() in ("true", "1", "yes")
+    DECAY_ENABLED: bool = os.getenv("HEBBIAN_MIND_DECAY_ENABLED", "true").lower() in (
+        "true",
+        "1",
+        "yes",
     )
     DECAY_BASE_RATE: float = float(os.getenv("HEBBIAN_MIND_DECAY_BASE_RATE", "0.01"))
     DECAY_THRESHOLD: float = float(os.getenv("HEBBIAN_MIND_DECAY_THRESHOLD", "0.1"))
     DECAY_IMMORTAL_THRESHOLD: float = float(
         os.getenv("HEBBIAN_MIND_DECAY_IMMORTAL_THRESHOLD", "0.9")
     )
-    DECAY_SWEEP_INTERVAL: int = int(
-        os.getenv("HEBBIAN_MIND_DECAY_SWEEP_INTERVAL", "60")
-    )  # minutes
+    DECAY_SWEEP_INTERVAL: int = int(os.getenv("HEBBIAN_MIND_DECAY_SWEEP_INTERVAL", "60"))  # minutes
 
     # Edge decay parameters
-    EDGE_DECAY_ENABLED: bool = (
-        os.getenv("HEBBIAN_MIND_EDGE_DECAY_ENABLED", "true").lower()
-        in ("true", "1", "yes")
+    EDGE_DECAY_ENABLED: bool = os.getenv("HEBBIAN_MIND_EDGE_DECAY_ENABLED", "true").lower() in (
+        "true",
+        "1",
+        "yes",
     )
     EDGE_DECAY_RATE: float = float(os.getenv("HEBBIAN_MIND_EDGE_DECAY_RATE", "0.005"))
-    EDGE_DECAY_MIN_WEIGHT: float = float(
-        os.getenv("HEBBIAN_MIND_EDGE_DECAY_MIN_WEIGHT", "0.1")
-    )
+    EDGE_DECAY_MIN_WEIGHT: float = float(os.getenv("HEBBIAN_MIND_EDGE_DECAY_MIN_WEIGHT", "0.1"))
 
     # Logging
     LOG_LEVEL: str = os.getenv("HEBBIAN_MIND_LOG_LEVEL", "INFO")
