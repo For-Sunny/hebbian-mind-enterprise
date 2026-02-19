@@ -79,9 +79,7 @@ class TestErrorSanitization:
 
     def test_sanitizes_multiple_paths(self):
         """Test that multiple paths in one error are all sanitized."""
-        error = Exception(
-            r"Error copying C:\Users\admin\source.txt to C:\Users\admin\dest.txt"
-        )
+        error = Exception(r"Error copying C:\Users\admin\source.txt to C:\Users\admin\dest.txt")
         result = sanitize_error_message(error)
         assert r"C:\Users\admin" not in result
         # The filenames should still be referenced
