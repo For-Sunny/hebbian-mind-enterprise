@@ -82,7 +82,7 @@ class Config:
     RAM_DISK_ENABLED: bool = os.getenv("HEBBIAN_MIND_RAM_DISK", "false").lower() == "true"
     RAM_DATA_DIR: Optional[Path] = (
         (
-            Path(os.getenv("HEBBIAN_MIND_RAM_DIR"))
+            Path(os.getenv("HEBBIAN_MIND_RAM_DIR", ""))
             if os.getenv("HEBBIAN_MIND_RAM_DIR")
             else _get_default_ram_dir()
         )
@@ -99,7 +99,7 @@ class Config:
     # PRECOG concept extractor integration (optional)
     PRECOG_ENABLED: bool = os.getenv("HEBBIAN_MIND_PRECOG_ENABLED", "false").lower() == "true"
     PRECOG_PATH: Optional[Path] = (
-        Path(os.getenv("HEBBIAN_MIND_PRECOG_PATH"))
+        Path(os.getenv("HEBBIAN_MIND_PRECOG_PATH", ""))
         if os.getenv("HEBBIAN_MIND_PRECOG_PATH")
         else None
     )

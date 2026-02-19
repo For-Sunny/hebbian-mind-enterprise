@@ -95,6 +95,7 @@ class HebbianMindDatabase:
         self._in_transaction = False
         self._coactivation_count = 0
         self._lock = threading.RLock()  # Serialize all DB access across threads
+        self._decay_engine: Optional[HebbianDecayEngine] = None
 
         self._init_connections()
         self._init_schema()
@@ -500,7 +501,7 @@ class HebbianMindDatabase:
         row = cursor.fetchone()
         return dict(row) if row else None
 
-    def analyze_content(self, content: str, threshold: float = None) -> List[Dict]:
+    def analyze_content(self, content: str, threshold: Optional[float] = None) -> List[Dict]:
         """Analyze content and return activated nodes.
 
         Enhanced with PRECOG ConceptExtractor (optional):
@@ -1124,7 +1125,9 @@ def _validate_string(value: Any, name: str, max_length: int = 100000) -> str:
     return value
 
 
-def _validate_number(value: Any, name: str, min_val: float = None, max_val: float = None) -> float:
+def _validate_number(
+    value: Any, name: str, min_val: Optional[float] = None, max_val: Optional[float] = None
+) -> float:
     """Validate and return a numeric parameter."""
     if not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a number, got {type(value).__name__}")
@@ -1420,7 +1423,7 @@ async def call_tool(name: str, arguments: Dict) -> List[types.TextContent]:
             if category:
                 nodes = [n for n in nodes if n["category"] == category]
 
-            by_category = {}
+            by_category: Dict[str, List[Dict[str, Any]]] = {}
             for node in nodes:
                 cat = node["category"]
                 if cat not in by_category:
