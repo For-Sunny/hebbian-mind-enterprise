@@ -29,12 +29,11 @@ import shutil
 import threading
 import uuid
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, List, Any, Optional
 from importlib import resources
 
 from .config import Config, sanitize_error_message
-from .decay import HebbianDecayEngine, calculate_effective_importance
+from .decay import HebbianDecayEngine
 
 # Initialize configuration
 Config.ensure_directories()
@@ -141,10 +140,10 @@ class HebbianMindDatabase:
             self.disk_conn = sqlite3.connect(str(self.disk_path), check_same_thread=False)
             self.disk_conn.row_factory = sqlite3.Row
             self.disk_conn.execute("PRAGMA journal_mode=WAL")
-            print(f"[HEBBIAN-MIND] Dual-write enabled: RAM + Disk", file=sys.stderr)
+            print("[HEBBIAN-MIND] Dual-write enabled: RAM + Disk", file=sys.stderr)
         else:
             self.disk_conn = None
-            print(f"[HEBBIAN-MIND] Single-write mode: Disk only", file=sys.stderr)
+            print("[HEBBIAN-MIND] Single-write mode: Disk only", file=sys.stderr)
 
     def _init_schema(self):
         """Initialize database schema on both connections."""
