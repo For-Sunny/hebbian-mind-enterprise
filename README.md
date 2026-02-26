@@ -23,7 +23,7 @@ Three paths. Pick what fits.
 
 ```powershell
 # Clone the repo
-git clone https://github.com/cipscorps/hebbian-mind-enterprise.git
+git clone https://github.com/For-Sunny/hebbian-mind-enterprise.git
 cd hebbian-mind-enterprise
 
 # Install with pip
@@ -39,7 +39,7 @@ The server runs on stdio. Press Ctrl+C to stop.
 
 ```bash
 # Clone the repo
-git clone https://github.com/cipscorps/hebbian-mind-enterprise.git
+git clone https://github.com/For-Sunny/hebbian-mind-enterprise.git
 cd hebbian-mind-enterprise
 
 # Install with pip (use a virtual environment if you prefer)
@@ -55,7 +55,7 @@ Linux gets automatic RAM disk support via `/dev/shm` when enabled.
 
 ```bash
 # Clone the repo
-git clone https://github.com/cipscorps/hebbian-mind-enterprise.git
+git clone https://github.com/For-Sunny/hebbian-mind-enterprise.git
 cd hebbian-mind-enterprise
 
 # Copy environment template

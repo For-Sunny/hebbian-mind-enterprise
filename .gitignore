@@ -45,10 +45,13 @@ htmlcov/
 
 # Data files (local development only)
 data/
+hebbian_mind_data/
 *.db
 *.db-wal
 *.db-shm
-*.json
+
+# Runtime data JSON (not source JSON like nodes.json)
+benchmarks/latest_results.json
 
 # Environment
 .env
