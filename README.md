@@ -1,5 +1,7 @@
 # Hebbian Mind Enterprise
 
+<!-- mcp-name: io.github.For-Sunny/hebbian-mind-enterprise -->
+
 **Memory that learns. Connections that fade.**
 
 An MCP server that builds knowledge graphs through use. Concepts connect when they activate together. Unused connections decay. The more you use it, the smarter it gets.

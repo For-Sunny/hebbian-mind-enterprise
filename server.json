@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.For-Sunny/hebbian-mind-enterprise",
+  "title": "Hebbian Mind",
+  "description": "Associative memory via Hebbian learning. Connections strengthen through use, decay through disuse.",
+  "repository": {
+    "url": "https://github.com/For-Sunny/hebbian-mind-enterprise",
+    "source": "github"
+  },
+  "version": "2.3.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "hebbian-mind-enterprise",
+      "version": "2.3.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
