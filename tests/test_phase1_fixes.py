@@ -348,13 +348,13 @@ class TestVersionBump:
     """Verify version was bumped for Phase 1 fixes."""
 
     def test_init_version(self):
-        """__init__.py should have version 2.3.1."""
+        """__init__.py should have version 2.3.2."""
         from hebbian_mind import __version__
 
-        assert __version__ == "2.3.1"
+        assert __version__ == "2.3.2"
 
     def test_pyproject_version(self):
-        """pyproject.toml should have version 2.3.1."""
+        """pyproject.toml should have version 2.3.2."""
         pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
         content = pyproject_path.read_text(encoding="utf-8")
-        assert 'version = "2.3.1"' in content
+        assert 'version = "2.3.2"' in content
