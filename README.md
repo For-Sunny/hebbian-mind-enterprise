@@ -2,6 +2,10 @@
 
 <!-- mcp-name: io.github.For-Sunny/hebbian-mind-enterprise -->
 
+<a href="https://glama.ai/mcp/servers/For-Sunny/hebbian-mind-enterprise">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/For-Sunny/hebbian-mind-enterprise/badge" />
+</a>
+
 **Memory that learns. Connections that fade.**
 
 An MCP server that builds knowledge graphs through use. Concepts connect when they activate together. Unused connections decay. The more you use it, the smarter it gets.
